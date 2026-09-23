@@ -567,7 +567,7 @@ function CardModal({
           c.prioridade_remocao === String(v)
         );
         if (duplicata) {
-          setConflito({ valor: v, nomeConflito: duplicata.nome, idConflito: duplicata.id, confirmado: false, novaPrioridade: '' });
+          setConflito({ valor: v, nomeConflito: duplicata.nome, idConflito: duplicata.id, prioridadeOriginal: duplicata.prioridade_remocao || '', confirmado: false, novaPrioridade: duplicata.prioridade_remocao ? String(parseInt(duplicata.prioridade_remocao,10)+1) : '' });
         } else {
           setConflito(null);
           upd("prioridade_remocao", String(v));
