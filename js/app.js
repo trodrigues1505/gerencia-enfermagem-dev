@@ -1053,15 +1053,25 @@ function App() {
 
   function KanbanDropdown({ view, setView }) {
     const [open, setOpen] = React.useState(false);
+    const [pos, setPos] = React.useState({ top: 0, left: 0 });
+    const btnRef = React.useRef(null);
     const SUB = [["lista","📄 Lista"],["calendario","📅 Calendário"],["timeline","⏱ Linha do Tempo"]];
     const isSubView = SUB.some(s => s[0] === view);
     const activeLabel = isSubView ? SUB.find(s => s[0] === view)[1] : "📋 Kanban";
+    function handleEnter() {
+      if (btnRef.current) {
+        const r = btnRef.current.getBoundingClientRect();
+        setPos({ top: r.bottom + 2, left: r.left });
+      }
+      setOpen(true);
+    }
     return /*#__PURE__*/React.createElement("div", {
       style: { position:"relative", display:"inline-block" },
-      onMouseEnter: () => setOpen(true),
+      onMouseEnter: handleEnter,
       onMouseLeave: () => setOpen(false)
     },
       /*#__PURE__*/React.createElement("button", {
+        ref: btnRef,
         onClick: () => setView("kanban"),
         style: {
           padding:"5px 14px", borderRadius:6, border:"none", fontSize:12,
@@ -1071,13 +1081,16 @@ function App() {
           cursor:"pointer", display:"inline-flex", alignItems:"center", gap:4, fontFamily:"inherit"
         }
       }, activeLabel, " ▾"),
-      open && /*#__PURE__*/React.createElement("div", {
-        style: {
-          position:"absolute", top:"100%", left:0, zIndex:9999,
-          background:"#fff", border:"1px solid #E2E8F0", borderRadius:10,
-          boxShadow:"0 8px 24px rgba(0,0,0,.12)", padding:"4px 0", minWidth:168, marginTop:2
-        }
-      },
+      open && ReactDOM.createPortal(
+        /*#__PURE__*/React.createElement("div", {
+          onMouseEnter: () => setOpen(true),
+          onMouseLeave: () => setOpen(false),
+          style: {
+            position:"fixed", top: pos.top, left: pos.left, zIndex:99999,
+            background:"#fff", border:"1px solid #E2E8F0", borderRadius:10,
+            boxShadow:"0 8px 24px rgba(0,0,0,.12)", padding:"4px 0", minWidth:168
+          }
+        },
         /*#__PURE__*/React.createElement("div", { style:{padding:"5px 14px 4px",fontSize:9,fontWeight:700,color:"#CBD5E1",textTransform:"uppercase",letterSpacing:".06em"} }, "Outras visualizações"),
         SUB.map(([id,label]) => /*#__PURE__*/React.createElement("button", {
           key: id,
@@ -1107,7 +1120,7 @@ function App() {
           onMouseEnter: e => e.currentTarget.style.background="#F8FAFC",
           onMouseLeave: e => e.currentTarget.style.background=view==="kanban"?"#F1F5F9":"transparent"
         }, "📋 Kanban")
-      )
+      ), document.body)
     );
   }
 
@@ -1174,7 +1187,7 @@ function App() {
     /* Conteúdo principal */
     /*#__PURE__*/React.createElement("div", { style: { maxWidth: 1600, margin: "0 auto", padding: "16px 20px" } },
       /* Barra de navegação e filtros */
-      /*#__PURE__*/React.createElement("div", { className: "ge-nav-bar", style: { display: "flex", gap: 8, marginBottom: 14, alignItems: "center", flexWrap: "nowrap", paddingBottom: 4, overflow: "visible" } },
+      /*#__PURE__*/React.createElement("div", { className: "ge-nav-bar", style: { display: "flex", gap: 8, marginBottom: 14, alignItems: "center", flexWrap: "nowrap", paddingBottom: 4, overflowX: "auto", overflowY: "visible" } },
         /*#__PURE__*/React.createElement("div", { className: "ge-nav-inner", style: { background: "#fff", border: "1px solid #E2E8F0", borderRadius: 8, padding: "2px", display: "flex", gap: 1, flexShrink: 0 } },
           /*#__PURE__*/React.createElement(NavBtn, { id: "dashboard", label: "📊 Dashboard" }),
           /*#__PURE__*/React.createElement(KanbanDropdown, { view: view, setView: setView }),
@@ -1412,6 +1425,7 @@ function App() {
       cols: isAdmin ? cols : displayCols,
       onClose: () => setSelected(null),
       onSave: onSave,
+      onUpdateCard: (id, fields) => setCards(p => { const next = p.map(c => c.id === id ? {...c, ...fields} : c); window.__geCards = next; return next; }),
       onDel: onDel,
       isAdmin: isAdmin,
       currentUser: currentUser,
