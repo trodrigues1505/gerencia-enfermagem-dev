@@ -71,6 +71,21 @@ function App() {
   const displayCards = isAdmin ? cards : pubCards || [];
   const displayCols = isAdmin ? cols : pubCols || cols;
 
+  // ===== Contagem global de ações pendentes (para o balão) =====
+  useEffect(() => {
+    if (!currentUser) { setPendenciasCount(0); return; }
+    let vivo = true;
+    async function fetchPendentes() {
+      try {
+        const rows = await sbGet("acoes_enfermagem", "status=eq.pendente&select=id");
+        if (vivo) setPendenciasCount(Array.isArray(rows) ? rows.length : 0);
+      } catch(e) {}
+    }
+    fetchPendentes();
+    const iv = setInterval(fetchPendentes, 60000);
+    return () => { vivo = false; clearInterval(iv); };
+  }, [currentUser]);
+
   // ===== Funções de login/logout =====
   function handleLogin(user) {
     setCurrentUser(user);
@@ -1159,7 +1174,7 @@ function App() {
     ),
     /* Banner edição / visualização */
     isAdmin && /*#__PURE__*/React.createElement("div", {
-      style: { background: "#FFFBEB", borderBottom: "1px solid #FDE68A", padding: "5px 20px", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8, flexWrap: "wrap" }
+      style: { background: "#FFFBEB", borderBottom: "1px solid #FDE68A", padding: "5px 20px", display: "flex", alignItems: "center", justifyContent: "space-between", position: "sticky", top: 48, zIndex: 99, gap: 8, flexWrap: "wrap" }
     },
       /*#__PURE__*/React.createElement("span", { style: { fontSize: 11, color: "#92400E", fontWeight: 500 } }, "✎ Modo de edição — alterações não ficam visíveis até publicar", lastPub ? ` · Última publicação: ${lastPub}` : ""),
       /*#__PURE__*/React.createElement("div", { style: { display: "flex", gap: 6, alignItems: "center" } },
@@ -1187,7 +1202,7 @@ function App() {
     /* Conteúdo principal */
     /*#__PURE__*/React.createElement("div", { style: { maxWidth: 1600, margin: "0 auto", padding: "16px 20px" } },
       /* Barra de navegação e filtros */
-      /*#__PURE__*/React.createElement("div", { className: "ge-nav-bar", style: { display: "flex", gap: 8, marginBottom: 14, alignItems: "center", flexWrap: "nowrap", paddingBottom: 4, overflowX: "auto", overflowY: "visible" } },
+      /*#__PURE__*/React.createElement("div", { className: "ge-nav-bar", style: { display: "flex", gap: 8, marginBottom: 14, alignItems: "center", flexWrap: "nowrap", paddingBottom: 4, overflow: "visible" } },
         /*#__PURE__*/React.createElement("div", { className: "ge-nav-inner", style: { background: "#fff", border: "1px solid #E2E8F0", borderRadius: 8, padding: "2px", display: "flex", gap: 1, flexShrink: 0 } },
           /*#__PURE__*/React.createElement(NavBtn, { id: "dashboard", label: "📊 Dashboard" }),
           /*#__PURE__*/React.createElement(KanbanDropdown, { view: view, setView: setView }),
