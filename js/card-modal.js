@@ -156,6 +156,7 @@ function CardModal({
   cols,
   onClose,
   onSave,
+  onUpdateCard,
   onDel,
   isAdmin,
   currentUser,
@@ -634,6 +635,10 @@ function CardModal({
                         })
                       });
                     } catch(ex) { console.warn("Falha ao atualizar prioridade anterior:", ex); }
+                  }
+                  // Atualiza state local do card anterior imediatamente
+                  if (conflito.idConflito && onUpdateCard) {
+                    onUpdateCard(conflito.idConflito, { prioridade_remocao: np, hora_prioridade: np ? nowStr() : "" });
                   }
                   setConflito(null);
                 },
