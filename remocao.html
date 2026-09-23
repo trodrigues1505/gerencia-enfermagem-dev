@@ -1,0 +1,1887 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Remoção — Gerência de Enfermagem</title>
+<script src="canon.js"></script>
+<script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+<script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+<script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
+<style>*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html,body,#root{height:100%;font-family:'Inter',system-ui,sans-serif;font-size:13px;-webkit-font-smoothing:antialiased;background:#F1F5F9;color:#0F172A}
+input,select,textarea,button{font-family:inherit}
+.app{display:flex;flex-direction:column;height:100vh;overflow:hidden}
+.topbar{background:#0F172A;padding:0 16px;flex-shrink:0;z-index:200}
+.ti{display:flex;align-items:center;justify-content:space-between;height:44px}
+.tb{display:flex;align-items:center;gap:8px}
+.tico{width:26px;height:26px;border-radius:6px;background:#1E40AF;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.tico span{color:#fff;font-size:12px;font-weight:700}
+.tn{font-weight:700;font-size:13px;color:#fff}
+.ts{font-size:8px;color:#475569;text-transform:uppercase;letter-spacing:.08em}
+.toolbar{background:#fff;border-bottom:2px solid #E2E8F0;padding:0 16px;flex-shrink:0;z-index:150}
+.tbi{display:flex;align-items:center;gap:8px;padding:7px 0;overflow-x:auto}
+.tbi::-webkit-scrollbar{height:4px}
+.tbi::-webkit-scrollbar-thumb{background:#CBD5E1;border-radius:99px}
+.btn{display:inline-flex;align-items:center;gap:5px;padding:5px 12px;border-radius:7px;font-size:12px;font-weight:600;cursor:pointer;border:none;transition:all .15s;white-space:nowrap;flex-shrink:0}
+.btn-p{background:#0F172A;color:#fff}.btn-p:hover{background:#1E293B}
+.btn-g{background:none;color:#64748B;border:1px solid #E2E8F0}.btn-g:hover{background:#F8FAFC;color:#0F172A}
+.btn-blue{background:#EFF6FF;color:#3B82F6;border:1px solid #BFDBFE}.btn-blue:hover{background:#DBEAFE}
+.btn-green{background:#F0FDF4;color:#16A34A;border:1px solid #86EFAC}.btn-green:hover{background:#DCFCE7}
+.btn-sm{padding:3px 8px;font-size:11px}
+.btn:disabled{opacity:.5;cursor:not-allowed}
+.sw{position:relative;flex-shrink:0}
+.sw svg{position:absolute;left:8px;top:50%;transform:translateY(-50%);color:#94A3B8;pointer-events:none}
+.si{background:#F8FAFC;border:1px solid #E2E8F0;border-radius:7px;color:#0F172A;padding:5px 10px 5px 28px;font-size:12px;width:170px;outline:none}
+.si:focus{border-color:#3B82F6}
+select.fsel{background:#F8FAFC;border:1px solid #E2E8F0;border-radius:7px;color:#374151;padding:5px 22px 5px 8px;font-size:12px;appearance:none;cursor:pointer;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='10' viewBox='0 0 24 24' fill='none' stroke='%2394A3B8' stroke-width='2'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 6px center;outline:none;flex-shrink:0}
+.stats{background:#fff;border-bottom:1px solid #E2E8F0;padding:5px 16px;display:flex;gap:14px;flex-shrink:0;align-items:center;overflow-x:auto}
+.stats::-webkit-scrollbar{height:4px}
+.chip{display:inline-flex;align-items:center;gap:5px;white-space:nowrap}
+.chip .cdot{width:7px;height:7px;border-radius:50%;flex-shrink:0}
+.chip .cl{color:#64748B;font-size:11px}
+.chip .cv{font-weight:700;font-size:13px}
+.csep{width:1px;height:14px;background:#E2E8F0;flex-shrink:0}
+.tw{flex:1;overflow:auto;background:#F1F5F9}
+.tw::-webkit-scrollbar{width:12px;height:12px}
+.tw::-webkit-scrollbar-track{background:#E2E8F0}
+.tw::-webkit-scrollbar-thumb{background:#94A3B8;border-radius:6px;border:3px solid #E2E8F0}
+.tw::-webkit-scrollbar-thumb:hover{background:#475569}
+.tw::-webkit-scrollbar-corner{background:#E2E8F0}
+/* Tabela — largura controlada pelo JS (colgroup), não CSS fixo */
+.rt{min-width:100%;border-collapse:separate;border-spacing:0;table-layout:fixed}
+.rt td,.rt th{overflow:hidden;text-overflow:ellipsis}
+.rt thead{position:sticky;top:0;z-index:50}
+.rt thead tr th{background:#1E293B;padding:4px 8px 4px 6px;height:38px;text-align:left;
+  font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;
+  color:#94A3B8;border-right:1px solid #334155;vertical-align:top;overflow:hidden}
+.rt thead tr th:hover{background:#334155;color:#E2E8F0}
+.rt thead tr th.sorted{color:#60A5FA;background:#1D3557}
+.rt thead tr th:last-child{border-right:none;cursor:default}
+/* Colunas fixas (sticky) — #, data, hora, ficha, nome */
+/* z-index escalonado: thead genérico=50, th.stk=80 (acima do thead), td.stk=20 */
+.rt thead th.stk,.rt tbody td.stk{position:sticky}
+.rt thead th.stk{z-index:80;background:#1E293B}
+.rt thead th.stk:hover{background:#334155}
+.rt tbody td.stk{z-index:20;background:#fff}
+.rt tbody tr:nth-child(even) td.stk{background:#EEF2FF}
+.rt tbody tr:hover td.stk{background:#DBEAFE!important}
+.rt tbody tr.row-active td.stk{background:#DBEAFE!important}
+/* Sombra separadora após a última coluna fixa */
+.rt thead th.stk-last{box-shadow:3px 0 8px rgba(0,0,0,.18)}
+.rt tbody td.stk-last{box-shadow:3px 0 6px rgba(0,0,0,.08)}
+/* Linha ativa */
+.rt tbody tr.row-active td{background:#EFF6FF!important}
+.rt tbody tr.row-active td.stk{background:#DBEAFE!important}
+.sarr{font-size:8px;opacity:.4;flex-shrink:0}.sarr.on{opacity:1;color:#60A5FA}
+/* Tooltip */
+.th-wrap{position:relative}
+.th-wrap:hover .tipbox{display:block}
+.tipbox{display:none;position:absolute;top:calc(100% + 2px);left:0;z-index:999;
+  background:#0F172A;color:#CBD5E1;font-size:10px;font-weight:400;text-transform:none;
+  letter-spacing:0;padding:8px 12px;border-radius:8px;white-space:normal;width:250px;
+  line-height:1.6;box-shadow:0 4px 16px rgba(0,0,0,.5);pointer-events:none;border:1px solid #334155}
+.tipbox strong{color:#fff;display:block;margin-bottom:2px}
+/* Linhas compactas — altura AUTOMÁTICA para caber texto quebrado */
+.rt tbody tr:nth-child(odd){background:#fff}
+.rt tbody tr:nth-child(even){background:#EEF2FF}
+.rt tbody tr:hover td{background:#DBEAFE!important}
+.rt tbody td{border-bottom:1px solid #E2E8F0;border-right:1px solid #F1F5F9;
+  vertical-align:top;font-size:11px;color:#374151;padding:0;overflow:hidden;
+  min-height:24px}
+.rt tbody td:last-child{border-right:none}
+.rt tbody tr:last-child td{border-bottom:none}
+/* Badges */
+.sb{display:inline-block;padding:1px 5px;border-radius:3px;font-size:9px;font-weight:700;
+  white-space:normal;text-transform:uppercase;word-break:break-word}
+.sf{background:#DCFCE7;color:#14532D}.se{background:#F1F5F9;color:#475569}
+.sn{background:#FEE2E2;color:#991B1B}.sa{background:#FEF3C7;color:#92400E}.sc{background:#EFF6FF;color:#1E40AF}
+.ab{display:inline-block;padding:1px 5px;border-radius:3px;font-size:9px;font-weight:700}
+.abb{background:#EFF6FF;color:#1E40AF}.aba{background:#FEE2E2;color:#991B1B}
+.delbtn{width:24px;height:24px;border-radius:4px;border:none;cursor:pointer;
+  display:flex;align-items:center;justify-content:center;background:none;color:#CBD5E1;
+  transition:all .1s;margin:2px auto}
+.delbtn:hover{background:#FEE2E2;color:#DC2626}
+.rt tbody tr .delbtn{opacity:0}
+.rt tbody tr:hover .delbtn{opacity:1}
+/* Toggle Sim/Não (bool) */
+.bool-toggle{display:inline-flex;align-items:center;gap:5px;padding:2px 6px;cursor:pointer;border-radius:5px;transition:background .12s;user-select:none}
+.bool-toggle:hover{background:#F1F5F9}
+.bool-toggle .bt-track{width:28px;height:15px;border-radius:99px;position:relative;transition:background .15s;flex-shrink:0}
+.bool-toggle .bt-thumb{position:absolute;top:2px;width:11px;height:11px;border-radius:50%;background:#fff;transition:left .15s;box-shadow:0 1px 3px rgba(0,0,0,.25)}
+.bool-on .bt-track{background:#16A34A}
+.bool-on .bt-thumb{left:15px}
+.bool-off .bt-track{background:#CBD5E1}
+.bool-off .bt-thumb{left:2px}
+.bool-label{font-size:10px;font-weight:700;min-width:22px}
+.bool-on .bool-label{color:#16A34A}
+.bool-off .bool-label{color:#94A3B8}
+/* Modal */
+.mbk{position:fixed;inset:0;z-index:1000;background:rgba(15,23,42,.55);display:flex;align-items:center;justify-content:center;padding:12px}
+.mdl{background:#fff;border-radius:14px;width:100%;max-width:860px;max-height:94vh;display:flex;flex-direction:column;overflow:hidden;box-shadow:0 20px 60px rgba(0,0,0,.3)}
+.mhd{display:flex;align-items:center;justify-content:space-between;padding:12px 18px;border-bottom:1px solid #F1F5F9;flex-shrink:0}
+.mhd h2{font-size:14px;font-weight:700}.mhd p{font-size:11px;color:#94A3B8;margin-top:1px}
+.mbd{flex:1;overflow-y:auto;padding:16px}
+.mft{display:flex;justify-content:flex-end;gap:8px;padding:10px 18px;border-top:1px solid #F1F5F9;flex-shrink:0}
+.fsc{margin-bottom:14px}
+.fst{font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:#94A3B8;margin-bottom:8px;padding-bottom:4px;border-bottom:1px solid #F1F5F9}
+.fg{display:grid;gap:8px}.fg2{grid-template-columns:1fr 1fr}.fg3{grid-template-columns:1fr 1fr 1fr}.fg4{grid-template-columns:1fr 1fr 1fr 1fr}
+.fd{display:flex;flex-direction:column;gap:2px}
+.fd label{font-size:9px;font-weight:600;color:#94A3B8;text-transform:uppercase;letter-spacing:.04em}
+.req{color:#EF4444;margin-left:2px}
+.fd input,.fd select,.fd textarea{border:1px solid #E2E8F0;border-radius:6px;color:#0F172A;padding:6px 8px;font-size:12px;outline:none;width:100%;background:#fff}
+.fd input:focus,.fd select:focus,.fd textarea:focus{border-color:#3B82F6;box-shadow:0 0 0 2px rgba(59,130,246,.1)}
+.fd textarea{resize:vertical;min-height:48px}
+.ccard{display:flex;align-items:center;gap:10px;padding:8px 12px;border:1px solid #E2E8F0;border-radius:8px;margin-bottom:6px;background:#fff;cursor:pointer;transition:all .12s}
+.ccard:hover{border-color:#93C5FD;background:#F0F9FF}
+.ccard.sel{border-color:#3B82F6;background:#EFF6FF}
+.cchk{width:18px;height:18px;border-radius:4px;border:2px solid #CBD5E1;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:all .12s}
+.ccard.sel .cchk{border-color:#3B82F6;background:#3B82F6}
+.empty{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;padding:40px;color:#CBD5E1;font-size:13px}
+.tst{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);z-index:9999;display:flex;flex-direction:column;gap:6px;pointer-events:none}
+.toast{display:flex;align-items:center;gap:8px;padding:8px 18px;border-radius:8px;font-size:12px;font-weight:500;box-shadow:0 4px 16px rgba(0,0,0,.14);white-space:nowrap}
+.toast.ok{background:#F0FDF4;border:1px solid #86EFAC;color:#166534}
+.toast.err{background:#FEE2E2;border:1px solid #FCA5A5;color:#991B1B}
+@media(max-width:768px){.fg2,.fg3,.fg4{grid-template-columns:1fr}}
+/* Drag de colunas */
+.th-dragging{opacity:.5;background:#1D3557!important}
+.th-drag-over{border-left:2px solid #60A5FA!important}
+.th-drag-handle{cursor:grab;color:#475569;display:flex;align-items:center;padding:0 2px;flex-shrink:0}
+.th-drag-handle:active{cursor:grabbing}
+/* Checkbox seleção múltipla */
+.row-checkbox{width:16px;height:16px;border-radius:3px;border:1.5px solid #CBD5E1;cursor:pointer;appearance:none;background:#fff;transition:all .12s;flex-shrink:0}
+.row-checkbox:checked{background:#3B82F6;border-color:#3B82F6;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 12'%3E%3Cpath d='M2 6l3 3 5-5' stroke='%23fff' stroke-width='1.8' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:center}
+.row-checkbox:hover{border-color:#3B82F6}
+/* Barra de ações múltiplas */
+.bulk-bar{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);z-index:500;
+  background:#0F172A;border-radius:10px;padding:10px 16px;display:flex;align-items:center;gap:12px;
+  box-shadow:0 8px 32px rgba(0,0,0,.4);border:1px solid #334155;white-space:nowrap}
+.bulk-bar span{color:#94A3B8;font-size:12px}
+.bulk-bar strong{color:#fff;font-size:13px}
+/* Modal confirmar delete */
+.confirm-modal{background:#fff;border-radius:12px;padding:24px;max-width:360px;width:100%;box-shadow:0 20px 60px rgba(0,0,0,.3)}
+/* Sort reset indicator */
+.sort-active{color:#FCD34D!important}
+
+/* Split button */
+.spb{display:inline-flex;align-items:stretch;border-radius:7px;overflow:visible;flex-shrink:0;position:relative;z-index:10}
+.spb.open{z-index:9100}
+.spb-main{border-radius:7px 0 0 7px;border-right:none!important;padding:5px 10px}
+.spb-arr{border-radius:0 7px 7px 0;border-left:1px solid rgba(0,0,0,.12)!important;padding:5px 7px;min-width:0}
+.spb-green .spb-main,.spb-green .spb-arr{background:#F0FDF4;color:#16A34A;border:1px solid #86EFAC}
+.spb-green .spb-main:hover,.spb-green .spb-arr:hover{background:#DCFCE7}
+.spb-blue .spb-main,.spb-blue .spb-arr{background:#EFF6FF;color:#3B82F6;border:1px solid #BFDBFE}
+.spb-blue .spb-main:hover,.spb-blue .spb-arr:hover{background:#DBEAFE}
+.spb-arr svg{transition:transform .15s}
+.spb.open .spb-arr svg{transform:rotate(180deg)}
+.spb-drop{position:fixed;background:#fff;border:1px solid #E2E8F0;border-radius:9px;box-shadow:0 8px 24px rgba(0,0,0,.12);padding:4px;min-width:160px;z-index:9200;display:none;flex-direction:column;gap:1px}
+.spb.open .spb-drop{display:flex}
+.spb-item{display:flex;align-items:center;gap:8px;padding:7px 10px;border-radius:6px;font-size:12px;font-weight:500;color:#374151;cursor:pointer;border:none;background:none;width:100%;text-align:left;transition:background .1s}
+.spb-item:hover{background:#F1F5F9;color:#0F172A}
+.spb-item svg{flex-shrink:0;color:#94A3B8}
+.spb-item:hover svg{color:#3B82F6}
+.spb-sep{height:1px;background:#F1F5F9;margin:2px 0}
+
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script type="text/babel">
+const { useState, useEffect, useCallback, useMemo, useRef } = React;
+
+const SB_URL = "https://ahcrscstdtfawoogsugi.supabase.co";
+const SB_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFoY3JzY3N0ZHRmYXdvb2dzdWdpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODg2Mjk1MDgsImV4cCI6MjEwNDIwNTUwOH0.8ivWRA99AXXyBVFT3TQd5NuSod2eiowiI490Blt2zHM";
+const FN = `${SB_URL}/functions/v1/remocoes-write`;
+// H e um objeto mutavel de proposito: e passado por referencia como `headers`
+// em varios fetch, entao trocar Authorization aqui vale para todos. Com RLS
+// ligada, requisicao sem token de sessao nao le nada.
+const H = {"Content-Type":"application/json",apikey:SB_KEY,Authorization:`Bearer ${SB_KEY}`};
+
+// A sessao e a mesma do index.html (supabase-js persiste por origem), entao
+// quem ja entrou no Kanban chega aqui autenticado. Sem sessao, volta ao login.
+let _sbAuth = null;
+async function sbAuthClient(){
+  if(_sbAuth) return _sbAuth;
+  if(!window.supabase){
+    await new Promise((res,rej)=>{
+      const el=document.createElement("script");
+      el.src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js";
+      el.onload=res; el.onerror=rej; document.head.appendChild(el);
+    });
+  }
+  _sbAuth = window.supabase.createClient(SB_URL, SB_KEY);
+  return _sbAuth;
+}
+async function aplicarSessao(){
+  const sb = await sbAuthClient();
+  const { data } = await sb.auth.getSession();
+  if(!data.session){ window.location.href = "index.html"; return null; }
+  H.Authorization = `Bearer ${data.session.access_token}`;
+  sb.auth.onAuthStateChange((_e,sess)=>{
+    H.Authorization = `Bearer ${sess?.access_token || SB_KEY}`;
+    if(!sess) window.location.href = "index.html";
+  });
+  return data.session;
+}
+
+async function api(body) {
+  const r = await fetch(FN,{method:"POST",headers:H,body:JSON.stringify(body)});
+  const d = await r.json();
+  if(!r.ok) throw new Error(d.error||"Erro");
+  return d;
+}
+
+// Para campos booleanos, usa PATCH direto na REST API do Supabase
+// A Edge Function pode filtrar/transformar valores boolean — REST API não tem essa limitação
+async function dbGet(path) {
+  const r = await fetch(`${SB_URL}/rest/v1/${path}`,{headers:H});
+  if(!r.ok) throw new Error(await r.text());
+  return r.json();
+}
+
+function calcTempo(h1, h2) {
+  if(!h1||!h2) return "";
+  try {
+    const [a,b]=h1.split(":").map(Number);
+    const [c,d]=h2.split(":").map(Number);
+    let diff=(c*60+d)-(a*60+b);
+    if(diff<0) diff+=1440;
+    return `${String(Math.floor(diff/60)).padStart(2,"0")}:${String(diff%60).padStart(2,"0")}`;
+  } catch { return ""; }
+}
+
+const GRAV_MAP = {
+  emergencia:      {label:"EMERGÊNCIA",      bg:"#FEE2E2",fc:"#991B1B",bd:"#FCA5A5"},
+  urgencia:        {label:"URGÊNCIA",        bg:"#FEF9C3",fc:"#713F12",bd:"#FDE047"},
+  menor_gravidade: {label:"MENOR GRAVIDADE", bg:"#DCFCE7",fc:"#14532D",bd:"#86EFAC"},
+  agendamento:     {label:"AGENDAMENTO",     bg:"#F1F5F9",fc:"#475569",bd:"#E2E8F0"},
+  VERMELHO:        {label:"EMERGÊNCIA",      bg:"#FEE2E2",fc:"#991B1B",bd:"#FCA5A5"},
+  AMARELO:         {label:"URGÊNCIA",        bg:"#FEF9C3",fc:"#713F12",bd:"#FDE047"},
+  VERDE:           {label:"MENOR GRAVIDADE", bg:"#DCFCE7",fc:"#14532D",bd:"#86EFAC"},
+  CINZA:           {label:"AGENDAMENTO",     bg:"#F1F5F9",fc:"#475569",bd:"#E2E8F0"},
+};
+function gravInfo(v) { return GRAV_MAP[v] || {label:v||"—",bg:"#F1F5F9",fc:"#475569",bd:"#E2E8F0"}; }
+
+const S_OPTS=["FICHA FINALIZADA","FICHA FINALIZADA VIA CROSS","FICHA FINALIZADA PELA CROSS","FICHA FINALIZADA PELA ORIGEM","FICHA ENCERRADA PELO CROSS","ENCERRADA PELO CROSS","REMOÇÃO CONCLUÍDA","REMOÇÃO NÃO REALIZADA, POR INDISPONIBILIDADE DE AMBULÂNCIA","ALTA HOSPITALAR","RESOLVIDO COM RECURSOS LOCAIS","CASO SEM ATUALIZAÇÃO MÉDICA HÁ 48 HORAS","EVASÃO/ALTA A PEDIDO","CANCELADA PELO CROSS","CANCELADA PELO SOLICITANTE","PACIENTE EM REMOÇÃO","PACIENTE AGUARDANDO AMBULÂNCIA","CONCLUIDO","AGENDAMENTO SECRETARIA DA SAÚDE","HEMODIÁLISE","OUTRO"];
+const G_OPTS=["emergencia","urgencia","menor_gravidade","agendamento","VERMELHO","AMARELO","VERDE","CINZA"];
+const ST_OPTS=["EMERGÊNCIA","CLÍNICA MÉDICA","OBSERVAÇÃO ADULTO","OBSERVAÇÃO INFANTIL","CLÍNICA PEDIÁTRICA","UTI","BLOCO MATERNO","EVASÃO","OUTRO"];
+const P_OPTS=["AVALIAÇÃO","EXAME","LEITO","BANCO","ALTA","OUTRO"];
+const A_OPTS=["BÁSICA","AVANÇADA","UTI"];
+const S_CLS={"FICHA FINALIZADA":"sf","FICHA FINALIZADA VIA CROSS":"sf","FICHA FINALIZADA PELA CROSS":"sf","FICHA FINALIZADA PELA ORIGEM":"sf","REMOÇÃO CONCLUÍDA":"sc","CONCLUIDO":"sc","PACIENTE EM REMOÇÃO":"sa","PACIENTE AGUARDANDO AMBULÂNCIA":"sa","REMOÇÃO NÃO REALIZADA, POR INDISPONIBILIDADE DE AMBULÂNCIA":"sn","FICHA ENCERRADA PELO CROSS":"se","ENCERRADA PELO CROSS":"se","EVASÃO/ALTA A PEDIDO":"se","CANCELADA PELO CROSS":"se","CANCELADA PELO SOLICITANTE":"se"};
+const AM={"Básica":"BÁSICA","Avançada":"AVANÇADA"};
+
+// [field, planilha, xls, kanban, tipo, optsKey, tip, initW]
+const COLS = [
+  ["data_solicitacao",        "DATA DA SOLICITAÇÃO",                    "DATA SOLIC.",       "adm",         "date","",       "Data abertura CROSS (campo 'Data')",80],
+  ["horario_solicitacao",     "HORÁRIO DA SOLICITAÇÃO",                 "HORA SOLIC.",       "hora_adm",    "time","",       "Hora abertura CROSS (campo 'Hora')",58],
+  ["ficha_cross",             "Nº DA FICHA CROSS",                      "Nº FICHA CROSS",    "ficha_cross", "text","",       "Número SS-XXXXXXXX. Fonte: CROSS/Kanban",120],
+  ["nome_paciente",           "NOME PACIENTE",                          "NOME PACIENTE",     "nome",        "text","",       "Nome do paciente. Fonte: CROSS/Kanban",160],
+  ["setor",                   "LOCALIZAÇÃO/SETOR DO PACIENTE",          "LOCALIZAÇÃO/SETOR", "setor",       "sel", "ST_OPTS","Setor. Fonte: CROSS 'Unidade Solicitante'",110],
+  ["procedimento",            "PROCEDIMENTO",                           "PROCEDIMENTO",      "—",           "sel", "P_OPTS", "Tipo do recurso (Exame, Leito...). Manual",90],
+  ["especialidade",           "ESPECIALIDADE",                          "ESPECIALIDADE",     "rec",         "text","",       "Especialidade. Fonte: CROSS '1º Recurso'/Kanban 'rec'",120],
+  ["diagnostico",             "DIAGNÓSTICO",                            "DIAGNÓSTICO",       "hd",          "text","",       "CID ou hipótese. Fonte: CROSS 'CID 1'/Kanban 'hd'",150],
+  ["status",                  "STATUS",                                 "STATUS",            "—",           "sel", "S_OPTS", "Status da remoção. Manual",140],
+  ["gravidade",               "GRAVIDADE",                              "GRAVIDADE",         "grav",        "sel", "G_OPTS", "Gravidade. CROSS 'Prioridade'/Kanban 'grav'",100],
+  ["data_resposta_cross",     "DATA DA RESPOSTA CROSS",                 "DATA RESP. CROSS",  "data_resolucao","date","",    "Data resposta CROSS. Fonte: Kanban 'data_resolucao'",80],
+  ["horario_resposta_cross",  "HORÁRIO DA RESPOSTA CROSS",              "HOR. RESP. CROSS",  "hora_resolucao","time","",    "Hora resposta CROSS. Fonte: Kanban 'hora_resolucao'",60],
+  ["instituicao_destino",     "INSTITUIÇÃO DESTINO",                    "INSTITUIÇÃO DEST.", "hosp",        "text","",       "Hospital receptor. Fonte: Kanban 'hosp'",130],
+  ["tipo_ambulancia",         "TIPO DE AMBULÂNCIA",                     "TIPO AMB.",         "amb",         "sel", "A_OPTS", "BÁSICA (SBV) ou AVANÇADA (SAV). Fonte: Kanban 'amb'",80],
+  ["data_saida_ambulancia",   "SOLICITAÇÃO BASE AMBULANCIA DATA",       "DATA SOLIC. AMB.",  "—",           "date","",       "Data da solicitação da ambulância. Manual",80],
+  ["hora_solic_ambulancia",   "HORÁRIO SOLICITAÇÃO AMBULÂNCIA",         "HORA SOLIC. AMB.",  "—",           "time","",       "Hora da solicitação à base. Manual",60],
+  ["horario_saida_ambulancia","HORÁRIO DE SAÍDA DA AMBULÂNCIA DA SCFM", "SAÍDA AMB. SCFM",   "saida",       "time","",       "Hora saída ambulância. Fonte: Kanban 'saida'",60],
+  ["tempo_espera",            "TEMPO DE ESPERA DA AMBULÂNCIA",          "T. ESPERA",         "—",           "ro", "",        "Auto: Saída SCFM − Hora Solic. Ambulância",60],
+  ["observacao",              "OBSERVAÇÃO",                             "OBSERVAÇÃO",        "obs",         "text","",       "Obs. Fonte: CROSS 'Resumo Clínico'/Kanban 'obs'",160],
+  ["enfermeiro",              "ENFERMEIRO",                             "ENFERMEIRO",        "—",           "text","",       "Enfermeiro responsável. Manual",110],
+  ["tecnico_auxiliar",        "TÉCNICO/AUXILIAR ENFERMAGEM",            "TÉCNICO/AUX.",      "—",           "text","",       "Técnico/auxiliar. Manual",110],
+  ["medico",                  "MÉDICO",                                 "MÉDICO",            "medico_solic","text","",       "Médico. Fonte: CROSS 'Médico Solicitante'",110],
+  ["horario_retorno",         "HORARIO DO RETORNO DO PACIENTE",         "HORA RETORNO",      "retorno",     "time","",       "Retorno do paciente. Fonte: Kanban 'retorno'",60],
+  ["duracao_remocao",         "DURAÇÃO DA REMOÇÃO",                     "DURAÇÃO",           "—",           "ro", "",        "Auto: Hora Retorno − Saída SCFM",60],
+  ["finalizado",              "FINALIZADO",                             "FINALIZADO",        "—",           "bool","",       "Remoção finalizada? Sim/Não",70],
+  ["permaneceu",              "PERMANECEU",                             "PERMANECEU",        "—",           "bool","",       "Paciente permaneceu na unidade? Sim/Não",80],
+];
+
+const EMPTY = Object.fromEntries(COLS.map(([f])=>[f,""]));
+const fmtD=v=>{if(!v)return"";try{return new Date(v+"T12:00:00").toLocaleDateString("pt-BR",{day:"2-digit",month:"2-digit",year:"numeric"})}catch{return v}};
+
+const Ico=(({n,s=14})=>{
+  const d={
+    search:<><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></>,
+    trash:<><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6M14 11v6"/></>,
+    x:<path d="M18 6 6 18M6 6l12 12"/>,
+    plus:<path d="M12 5v14M5 12h14"/>,
+    import:<><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></>,
+    check:<polyline points="20 6 9 12 4 10"/>,
+    excel:<><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 3v18"/></>,
+    pulse:<polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>,
+    download:<><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></>,
+  };
+  return <svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">{d[n]}</svg>;
+});
+
+function useToast(){
+  const [ts,setTs]=useState([]);
+  const push=useCallback((msg,type="ok")=>{
+    const id=Date.now();
+    setTs(t=>[...t,{id,msg,type}]);
+    setTimeout(()=>setTs(t=>t.filter(x=>x.id!==id)),4000);
+  },[]);
+  return {ts,push};
+}
+
+// Select com opção "Digitar livre"
+function SelOrFree({value,onChange,opts,isGrav}){
+  const inOpts = opts.includes(value)||value==="";
+  const [free,setFree]=useState(!inOpts&&value!=="");
+  const ref=useRef();
+  useEffect(()=>{if(free&&ref.current)ref.current.focus();},[free]);
+  if(free) return(
+    <div style={{display:"flex",gap:3}}>
+      <input ref={ref} type="text" value={value} onChange={e=>onChange(e.target.value)}
+        placeholder="Digite..."
+        style={{flex:1,border:"1px solid #C4B5FD",borderRadius:6,padding:"6px 8px",fontSize:12,outline:"none",color:"#0F172A"}}/>
+      <button type="button" onClick={()=>{setFree(false);onChange("");}}
+        style={{border:"1px solid #E2E8F0",borderRadius:6,background:"none",cursor:"pointer",padding:"0 8px",color:"#94A3B8",fontSize:11}}>✕</button>
+    </div>
+  );
+  return(
+    <select value={value||""} onChange={e=>{if(e.target.value==="__free__")setFree(true);else onChange(e.target.value);}}
+      style={{border:"1px solid #E2E8F0",borderRadius:6,color:"#0F172A",padding:"6px 8px",fontSize:12,outline:"none",width:"100%",appearance:"none",cursor:"pointer",backgroundImage:`url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='10' viewBox='0 0 24 24' fill='none' stroke='%2394A3B8' stroke-width='2'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E")`,backgroundRepeat:"no-repeat",backgroundPosition:"right 8px center",backgroundSize:"10px"}}>
+      <option value="">— selecione —</option>
+      {opts.map(o=>{
+        const g=isGrav?gravInfo(o):null;
+        return <option key={o} value={o} style={g?{background:g.bg,color:g.fc}:{}}>{g?g.label:o}</option>;
+      })}
+      <option value="__free__">✏️ Digitar valor livre…</option>
+    </select>
+  );
+}
+
+// Toggle Sim/Não para campos booleanos
+function BoolCell({rowId,field,value,onSave}){
+  const on=value===true||value==="true"||value==="sim"||value===1;
+  function toggle(e){e.stopPropagation();onSave(rowId,field,!on);}
+  return(
+    <div className={`bool-toggle ${on?"bool-on":"bool-off"}`} onClick={toggle} title={on?"Sim — clique para alternar":"Não — clique para alternar"}>
+      <div className="bt-track"><div className="bt-thumb"/></div>
+      <span className="bool-label">{on?"Sim":"Não"}</span>
+    </div>
+  );
+}
+
+// Navegacao por teclado entre celulas
+function navigateCell(currentTd, direction){
+  const td=currentTd.closest("td");
+  if(!td)return;
+  const tr=td.closest("tr");
+  const tbody=tr.closest("tbody");
+  const tds=[...tr.querySelectorAll("td")];
+  const colIdx=tds.indexOf(td);
+  const rows=[...tbody.querySelectorAll("tr")];
+  const rowIdx=rows.indexOf(tr);
+  let targetTd=null;
+  if(direction==="right"){targetTd=tds[colIdx+1];}
+  else if(direction==="left"){targetTd=tds[colIdx-1];}
+  else if(direction==="down"){const nr=rows[rowIdx+1];if(nr){const ntds=[...nr.querySelectorAll("td")];targetTd=ntds[colIdx];}}
+  else if(direction==="up"){const nr=rows[rowIdx-1];if(nr){const ntds=[...nr.querySelectorAll("td")];targetTd=ntds[colIdx];}}
+  if(targetTd){
+    // fecha a celula atual e abre a proxima
+    const clickable=targetTd.querySelector("[data-nav]")||targetTd.querySelector("div[title='Clique para editar']");
+    if(clickable)clickable.click();
+    targetTd.scrollIntoView({block:"nearest",inline:"nearest"});
+  }
+}
+
+// Célula editável — texto quebra na célula
+function Cell({rowId,field,value,tipo,optsKey,onSave,fmtDisplay,colorStyle}){
+  const [ed,setEd]=useState(false);
+  const [val,setVal]=useState(value||"");
+  const [free,setFree]=useState(false);
+  const ref=useRef();
+  const wrapRef=useRef();
+  const OPTS_MAP={S_OPTS,G_OPTS,ST_OPTS,P_OPTS,A_OPTS};
+  const opts=optsKey?OPTS_MAP[optsKey]:null;
+  useEffect(()=>{setVal(value||"");},[value]);
+  useEffect(()=>{if(ed&&ref.current)ref.current.focus();},[ed]);
+  function commit(){setEd(false);setFree(false);if(val!==(value||""))onSave(rowId,field,val);}
+  function handleKeyNav(e){
+    const el=wrapRef.current;
+    if(e.key==="Tab"){e.preventDefault();commit();navigateCell(el,e.shiftKey?"left":"right");}
+    else if(e.key==="ArrowDown"&&!e.shiftKey){e.preventDefault();commit();navigateCell(el,"down");}
+    else if(e.key==="ArrowUp"&&!e.shiftKey){e.preventDefault();commit();navigateCell(el,"up");}
+    else if(e.key==="ArrowRight"&&e.ctrlKey){e.preventDefault();commit();navigateCell(el,"right");}
+    else if(e.key==="ArrowLeft"&&e.ctrlKey){e.preventDefault();commit();navigateCell(el,"left");}
+  }
+  // Readonly (calculado)
+  if(tipo==="ro") return(
+    <div style={{padding:"2px 6px",fontSize:10,color:value?"#7C3AED":"#CBD5E1",fontWeight:value?700:400,whiteSpace:"nowrap"}}>{value||"—"}</div>
+  );
+  if(!ed) return(
+    <div ref={wrapRef} data-nav="1" style={{padding:"2px 6px",minHeight:24,display:"flex",alignItems:"center",cursor:"pointer",fontSize:11,
+      wordBreak:"break-word",whiteSpace:"normal",lineHeight:1.3,
+      color:colorStyle?.color||(val?"#374151":"#CBD5E1"),
+      fontWeight:colorStyle?.fontWeight||(val?400:400),
+      fontStyle:val?"normal":"italic",whiteSpace:"nowrap",
+      ...(colorStyle||{})}}
+      onClick={()=>setEd(true)} title={colorStyle?"Clique para editar (calculado — limpe para recalcular automático)":"Clique para editar"}>
+      {fmtDisplay&&val ? fmtDisplay(val) : (val||"—")}
+    </div>
+  );
+  if(opts && !free) return(
+    <div ref={wrapRef}>
+    <select ref={ref} style={{width:"100%",height:"100%",minHeight:24,padding:"2px 4px",border:"none",
+      borderLeft:"2px solid #3B82F6",background:"#EFF6FF",fontSize:10,color:"#0F172A",outline:"none",appearance:"none",cursor:"pointer"}}
+      value={val} onChange={e=>{if(e.target.value==="__free__"){setFree(true);setVal("");}else setVal(e.target.value);}}
+      onBlur={commit}
+      onKeyDown={e=>{
+        if(e.key==="Escape"){setEd(false);setVal(value||"");return;}
+        if(e.key==="Enter"){commit();return;}
+        handleKeyNav(e);
+      }}>
+      <option value="">—</option>
+      {opts.map(o=>{
+        const g=field==="gravidade"?gravInfo(o):null;
+        return <option key={o} value={o}>{g?g.label:o}</option>;
+      })}
+      <option value="__free__">✏️ Digitar…</option>
+    </select>
+    </div>
+  );
+  return(
+    <div ref={wrapRef}>
+    <input ref={free?ref:null} style={{width:"100%",minHeight:24,padding:"2px 6px",border:"none",
+      borderLeft:"2px solid #3B82F6",background:"#EFF6FF",fontSize:11,color:"#0F172A",outline:"none"}}
+      type={tipo==="sel"?"text":tipo||"text"} value={val}
+      placeholder={free?"Digite o valor...":""}
+      onChange={e=>setVal(e.target.value)} onBlur={commit}
+      onKeyDown={e=>{
+        if(e.key==="Enter"){commit();return;}
+        if(e.key==="Escape"){setEd(false);setVal(value||"");setFree(false);return;}
+        handleKeyNav(e);
+      }}/>
+    </div>
+  );
+}
+
+// Modal importar do kanban — qualquer card, de qualquer coluna
+function KanbanImportModal({onClose,onImport}){
+  const [cols,setCols]=useState([]);
+  const [cards,setCards]=useState([]);
+  const [load,setLoad]=useState(true);
+  const [sel,setSel]=useState(new Set());
+  const [filterCol,setFilterCol]=useState("all");
+  const [q,setQ]=useState("");
+  useEffect(()=>{
+    Promise.all([
+      dbGet("columns?select=*&order=col_order.asc").catch(()=>[]),
+      dbGet("cards?select=*&order=created_at.asc").catch(()=>[]),
+    ]).then(([c,cd])=>{
+      setCols(Array.isArray(c)?c:[]);
+      setCards(Array.isArray(cd)?cd:[]);
+    }).finally(()=>setLoad(false));
+  },[]);
+  const colLabel=useMemo(()=>{
+    const m={};
+    cols.forEach(c=>{m[c.id]=c.label||c.id;});
+    return m;
+  },[cols]);
+  const filtered=useMemo(()=>{
+    let list=cards;
+    if(filterCol!=="all") list=list.filter(c=>c.col_id===filterCol);
+    if(q.trim()){
+      const t=q.trim().toLowerCase();
+      list=list.filter(c=>[c.nome,c.setor,c.hosp,c.ficha_cross].some(v=>(v||"").toLowerCase().includes(t)));
+    }
+    return list;
+  },[cards,filterCol,q]);
+  const allSel=filtered.length>0&&filtered.every(c=>sel.has(c.id));
+  function toggleAll(){
+    setSel(s=>{
+      const n=new Set(s);
+      if(allSel) filtered.forEach(c=>n.delete(c.id));
+      else filtered.forEach(c=>n.add(c.id));
+      return n;
+    });
+  }
+  function toggle(id){setSel(s=>{const n=new Set(s);n.has(id)?n.delete(id):n.add(id);return n;});}
+  return(
+    <div className="mbk">
+      <div className="mdl" style={{maxWidth:560}}>
+        <div className="mhd">
+          <div><h2>📋 Importar do Kanban</h2><p>Selecione qualquer card do quadro, de qualquer coluna</p></div>
+          <button className="btn btn-g btn-sm" onClick={onClose}><Ico n="x" s={12}/></button>
+        </div>
+        <div className="mbd">
+          <div style={{marginBottom:10,display:"flex",gap:8,alignItems:"center",flexWrap:"wrap"}}>
+            <select className="fsel" value={filterCol} onChange={e=>setFilterCol(e.target.value)}>
+              <option value="all">Todas as colunas</option>
+              {cols.map(c=><option key={c.id} value={c.id}>{c.label||c.id}</option>)}
+            </select>
+            <div className="sw">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+              <input className="si" style={{width:160}} placeholder="Buscar paciente..." value={q} onChange={e=>setQ(e.target.value)}/>
+            </div>
+            {filtered.length>0&&
+              <button className="btn btn-g btn-sm" onClick={toggleAll}>{allSel?"☐ Desmarcar todos":"☑ Selecionar todos"} ({filtered.length})</button>
+            }
+            <span style={{fontSize:11,color:"#64748B"}}>{sel.size} selecionado{sel.size!==1?"s":""}</span>
+          </div>
+          {load&&<div className="empty"><Ico n="pulse" s={24}/><p>Carregando…</p></div>}
+          {!load&&filtered.length===0&&<div className="empty"><p>Nenhum card encontrado.</p></div>}
+          {filtered.map(c=>{
+            const s=sel.has(c.id);
+            const gi=gravInfo(c.grav||"urgencia");
+            return(
+              <div key={c.id} className={`ccard ${s?"sel":""}`} onClick={()=>toggle(c.id)}>
+                <div className="cchk">{s&&<Ico n="check" s={10}/>}</div>
+                <div style={{flex:1,minWidth:0}}>
+                  <div style={{fontWeight:600,fontSize:12,color:"#0F172A",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{c.nome}{c.idade?` — ${c.idade}`:""}</div>
+                  <div style={{fontSize:10,color:"#64748B",marginTop:1}}>{[c.setor,c.rec,c.hosp].filter(Boolean).join(" · ")||"—"}</div>
+                  {c.hd&&<div style={{fontSize:10,color:"#94A3B8"}}>HD: {c.hd}</div>}
+                </div>
+                <div style={{display:"flex",flexDirection:"column",alignItems:"flex-end",gap:3,flexShrink:0}}>
+                  <span style={{padding:"1px 6px",borderRadius:99,fontSize:9,fontWeight:700,background:gi.bg,color:gi.fc,border:`1px solid ${gi.bd}`,whiteSpace:"nowrap"}}>{gi.label}</span>
+                  <span style={{fontSize:9,color:"#94A3B8",fontWeight:600,whiteSpace:"nowrap"}}>{colLabel[c.col_id]||c.col_id||"—"}</span>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+        <div className="mft">
+          <button className="btn btn-g" onClick={onClose}>Cancelar</button>
+          <button className="btn btn-p" disabled={sel.size===0} onClick={()=>{onImport(cards.filter(c=>sel.has(c.id)));onClose();}}>
+            Importar {sel.size>0?`${sel.size} card${sel.size>1?"s":""}`:""}</button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function FormModal({row,onClose,onSave,saving}){
+  const [form,setForm]=useState(row?{...EMPTY,...row}:{...EMPTY,data_solicitacao:new Date().toISOString().split("T")[0]});
+  const set=(k,v)=>setForm(f=>{
+    const n={...f,[k]:v};
+    if(k==="horario_saida_ambulancia"||k==="hora_solic_ambulancia")
+      n.tempo_espera=calcTempo(k==="hora_solic_ambulancia"?v:n.hora_solic_ambulancia,k==="horario_saida_ambulancia"?v:n.horario_saida_ambulancia);
+    if(k==="horario_retorno"||k==="horario_saida_ambulancia")
+      n.duracao_remocao=calcTempo(k==="horario_saida_ambulancia"?v:n.horario_saida_ambulancia,k==="horario_retorno"?v:n.horario_retorno);
+    return n;
+  });
+  const FD=({label,req:r,gc,ch})=>(
+    <div className="fd"><label>{label}{r&&<span className="req">*</span>}</label>{ch||gc}</div>
+  );
+  return(
+    <div className="mbk">
+      <div className="mdl">
+        <div className="mhd">
+          <div><h2>{row?.id?"Editar Registro":"Novo Registro de Remoção"}</h2>
+            <p>{row?.id?`Ficha ${row.ficha_cross||"—"}`:"Preencha os dados"}</p></div>
+          <button className="btn btn-g btn-sm" onClick={onClose}><Ico n="x" s={12}/></button>
+        </div>
+        <div className="mbd">
+          <div className="fsc"><div className="fst">Identificação</div>
+            <div className="fg fg3">
+              <div className="fd"><label>Data Solicitação <span className="req">*</span></label><input type="date" value={form.data_solicitacao} onChange={e=>set("data_solicitacao",e.target.value)}/></div>
+              <div className="fd"><label>Horário</label><input type="time" value={form.horario_solicitacao} onChange={e=>set("horario_solicitacao",e.target.value)}/></div>
+              <div className="fd"><label>Nº Ficha CROSS</label><input type="text" placeholder="SS-XXXXXXXX-XX" value={form.ficha_cross} onChange={e=>set("ficha_cross",e.target.value)}/></div>
+            </div>
+          </div>
+          <div className="fsc"><div className="fst">Paciente</div>
+            <div className="fg fg2">
+              <div className="fd"><label>Nome <span className="req">*</span></label><input type="text" placeholder="Nome completo" value={form.nome_paciente} onChange={e=>set("nome_paciente",e.target.value)}/></div>
+              <div className="fd"><label>Setor</label><SelOrFree value={form.setor} onChange={v=>set("setor",v)} opts={ST_OPTS}/></div>
+            </div>
+          </div>
+          <div className="fsc"><div className="fst">Dados Clínicos</div>
+            <div className="fg fg3">
+              <div className="fd"><label>Procedimento</label><SelOrFree value={form.procedimento} onChange={v=>set("procedimento",v)} opts={P_OPTS}/></div>
+              <div className="fd"><label>Especialidade</label><input type="text" placeholder="Urologia, TC..." value={form.especialidade} onChange={e=>set("especialidade",e.target.value)}/></div>
+              <div className="fd"><label>Gravidade</label><SelOrFree value={form.gravidade} onChange={v=>set("gravidade",v)} opts={G_OPTS} isGrav/></div>
+              <div className="fd" style={{gridColumn:"1/-1"}}><label>Diagnóstico</label><input type="text" placeholder="CID ou hipótese" value={form.diagnostico} onChange={e=>set("diagnostico",e.target.value)}/></div>
+            </div>
+          </div>
+          <div className="fsc"><div className="fst">Status / Resposta CROSS</div>
+            <div className="fg fg2">
+              <div className="fd"><label>Status</label><SelOrFree value={form.status} onChange={v=>set("status",v)} opts={S_OPTS}/></div>
+              <div className="fd"><label>Instituição Destino</label><input type="text" placeholder="Hospital receptor" value={form.instituicao_destino} onChange={e=>set("instituicao_destino",e.target.value)}/></div>
+              <div className="fd"><label>Data Resposta CROSS</label><input type="date" value={form.data_resposta_cross} onChange={e=>set("data_resposta_cross",e.target.value)}/></div>
+              <div className="fd"><label>Horário Resposta CROSS</label><input type="time" value={form.horario_resposta_cross} onChange={e=>set("horario_resposta_cross",e.target.value)}/></div>
+            </div>
+          </div>
+          <div className="fsc"><div className="fst">Ambulância</div>
+            <div className="fg fg4">
+              <div className="fd"><label>Tipo</label><SelOrFree value={form.tipo_ambulancia} onChange={v=>set("tipo_ambulancia",v)} opts={A_OPTS}/></div>
+              <div className="fd"><label>Data Solic. Ambulância</label><input type="date" value={form.data_saida_ambulancia} onChange={e=>set("data_saida_ambulancia",e.target.value)}/></div>
+              <div className="fd"><label>Hora Solic. Ambulância</label><input type="time" value={form.hora_solic_ambulancia} onChange={e=>set("hora_solic_ambulancia",e.target.value)}/></div>
+              <div className="fd"><label>Saída SCFM</label><input type="time" value={form.horario_saida_ambulancia} onChange={e=>set("horario_saida_ambulancia",e.target.value)}/></div>
+              <div className="fd"><label>Tempo Espera <span style={{color:"#7C3AED",fontWeight:400,textTransform:"none"}}>(auto)</span></label>
+                <input type="text" readOnly value={form.tempo_espera||calcTempo(form.hora_solic_ambulancia,form.horario_saida_ambulancia)} style={{background:"#F5F3FF",color:"#7C3AED",fontWeight:700}}/></div>
+            </div>
+          </div>
+          <div className="fsc"><div className="fst">Retorno</div>
+            <div className="fg fg3">
+              <div className="fd"><label>Hora Retorno Paciente</label><input type="time" value={form.horario_retorno} onChange={e=>set("horario_retorno",e.target.value)}/></div>
+              <div className="fd"><label>Duração Remoção <span style={{color:"#0369A1",fontWeight:400,textTransform:"none"}}>(auto)</span></label>
+                <input type="text" readOnly value={form.duracao_remocao||calcTempo(form.horario_saida_ambulancia,form.horario_retorno)} style={{background:"#EFF6FF",color:"#0369A1",fontWeight:700}}/></div>
+            </div>
+          </div>
+          <div className="fsc"><div className="fst">Equipe</div>
+            <div className="fg fg3">
+              <div className="fd"><label>Enfermeiro(a)</label><input type="text" placeholder="Nome" value={form.enfermeiro} onChange={e=>set("enfermeiro",e.target.value)}/></div>
+              <div className="fd"><label>Técnico/Aux.</label><input type="text" placeholder="Nome" value={form.tecnico_auxiliar} onChange={e=>set("tecnico_auxiliar",e.target.value)}/></div>
+              <div className="fd"><label>Médico(a)</label><input type="text" placeholder="Nome" value={form.medico} onChange={e=>set("medico",e.target.value)}/></div>
+            </div>
+          </div>
+          <div className="fsc"><div className="fst">Observação</div>
+            <div className="fd"><textarea rows={3} placeholder="Observações…" value={form.observacao} onChange={e=>set("observacao",e.target.value)}/></div>
+          </div>
+          <div className="fsc" style={{marginBottom:0}}><div className="fst">Encerramento</div>
+            <div className="fg fg2">
+              <div className="fd">
+                <label>Finalizado</label>
+                <div style={{display:"flex",alignItems:"center",gap:16,paddingTop:6}}>
+                  <label style={{display:"flex",alignItems:"center",gap:6,cursor:"pointer",fontSize:12,fontWeight:500,color:"#374151"}}>
+                    <input type="radio" name="finalizado" checked={form.finalizado===true||form.finalizado==="true"} onChange={()=>set("finalizado",true)}/> Sim
+                  </label>
+                  <label style={{display:"flex",alignItems:"center",gap:6,cursor:"pointer",fontSize:12,fontWeight:500,color:"#374151"}}>
+                    <input type="radio" name="finalizado" checked={!form.finalizado||form.finalizado===false||form.finalizado==="false"} onChange={()=>set("finalizado",false)}/> Não
+                  </label>
+                </div>
+              </div>
+              <div className="fd">
+                <label>Permaneceu na unidade</label>
+                <div style={{display:"flex",alignItems:"center",gap:16,paddingTop:6}}>
+                  <label style={{display:"flex",alignItems:"center",gap:6,cursor:"pointer",fontSize:12,fontWeight:500,color:"#374151"}}>
+                    <input type="radio" name="permaneceu" checked={form.permaneceu===true||form.permaneceu==="true"} onChange={()=>set("permaneceu",true)}/> Sim
+                  </label>
+                  <label style={{display:"flex",alignItems:"center",gap:6,cursor:"pointer",fontSize:12,fontWeight:500,color:"#374151"}}>
+                    <input type="radio" name="permaneceu" checked={!form.permaneceu||form.permaneceu===false||form.permaneceu==="false"} onChange={()=>set("permaneceu",false)}/> Não
+                  </label>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div className="mft">
+          <button className="btn btn-g" onClick={onClose}>Cancelar</button>
+          <button className="btn btn-p" disabled={saving||!form.nome_paciente} onClick={()=>onSave(form)}>
+            {saving?"Salvando…":(row?.id?"Salvar":"Criar Registro")}</button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// Normaliza texto p/ comparar cabeçalhos (sem acento, minúsculo, sem espaço extra)
+function normHdr(s){
+  // B2: remove pontuacao ANTES de colapsar espaco. Sem isto, cabecalhos reais
+  // do CROSS ("Nº DA FICHA CROSS", "LOCALIZACAO/SETOR") nao casam com o mapa,
+  // matched cai abaixo de 40% e o lote inteiro entra deslocado.
+  return String(s||"").normalize("NFD").replace(/[\u0300-\u036f]/g,"")
+    .replace(/[\u00a0\u200b-\u200d\ufeff]/g," ")
+    .replace(/[.\-_/\\,;:\u00ba\u00b0\u00aa'"()\[\]]/g," ")
+    .toLowerCase().replace(/\s+/g," ").trim();
+}
+
+// Mapa reverso label -> chave interna de gravidade (para aceitar valores exportados/copiados do Excel,
+// que mostram o rótulo "MENOR GRAVIDADE" em vez da chave "menor_gravidade")
+const GRAV_LABEL_TO_KEY=(()=>{
+  const m={};
+  Object.entries(GRAV_MAP).forEach(([k,v])=>{ m[normHdr(v.label)]=k; m[normHdr(k)]=k; });
+  return m;
+})();
+// Mapa final: qualquer representação -> valor aceito pelo banco (VERMELHO/AMARELO/VERDE/CINZA)
+const GRAV_TO_DB={
+  emergencia:"VERMELHO",urgencia:"AMARELO",menor_gravidade:"VERDE",agendamento:"CINZA",
+  VERMELHO:"VERMELHO",AMARELO:"AMARELO",VERDE:"VERDE",CINZA:"CINZA",
+};
+function normalizeGravValue(v){
+  if(!v)return null;
+  // 1) tenta label em portugues (ex: "EMERGENCIA" -> "emergencia")
+  const intermediate=GRAV_LABEL_TO_KEY[normHdr(v)];
+  const key=intermediate||v;
+  // 2) converte para o valor aceito pelo banco
+  const dbVal=GRAV_TO_DB[key]||GRAV_TO_DB[normHdr(key)];
+  return dbVal||null;
+}
+
+// Converte data em varios formatos (DD/MM/YYYY, DD/MM/YY, YYYY-MM-DD) para ISO YYYY-MM-DD
+// Retorna null se o valor nao for reconhecivel como data valida
+function normalizeDateValue(v){
+  if(!v)return null;
+  v=String(v).trim();
+  if(/^\d{4}-\d{2}-\d{2}$/.test(v))return v; // ja e ISO
+  const br=v.match(/^(\d{1,2})\/(\d{1,2})\/(\d{2,4})$/);
+  if(br){
+    let [,d,m,y]=br;
+    if(y.length===2)y="20"+y;
+    return `${y}-${m.padStart(2,"0")}-${d.padStart(2,"0")}`;
+  }
+  return null; // nao reconhecido (ex: "N/A", texto livre) -> null para nao quebrar o banco
+}
+
+// Normaliza horario: aceita HH:MM ou HH:MM:SS, retorna HH:MM ou null
+function normalizeTimeValue(v){
+  if(!v)return null;
+  v=String(v).trim();
+  // HH:MM:SS -> HH:MM
+  const full=v.match(/^(\d{1,2}):(\d{2}):\d{2}$/);
+  if(full)return `${full[1].padStart(2,"0")}:${full[2]}`;
+  // HH:MM
+  if(/^\d{1,2}:\d{2}$/.test(v))return v;
+  return null; // nao e horario valido
+}
+
+// Normaliza tipo_ambulancia para os valores aceitos pelo banco
+function normalizeAmbValue(v){
+  if(!v)return null;
+  // remove acentos e compara
+  const u=String(v).trim().toUpperCase()
+    .normalize("NFD").replace(/[\u0300-\u036f]/g,"");
+  // B5: SBV/SAV/USB/USA sao a nomenclatura corrente do CROSS e antes viravam
+  // null em silencio (normalizeRowValues deleta null) -> 56 registros, 44% da
+  // base, sem tipo de ambulancia.
+  if(u==="BASICA"||u==="BASICO"||u==="SBV"||u==="USB")return "B\u00c1SICA";
+  if(u==="AVANCADA"||u==="AVANCADO"||u==="SAV"||u==="USA")return "AVAN\u00c7ADA";
+  if(u==="UTI")return "UTI";
+  // ja veio com acento certo
+  const orig=String(v).trim().toUpperCase();
+  if(orig==="B\u00c1SICA")return "B\u00c1SICA";
+  if(orig==="AVAN\u00c7ADA")return "AVAN\u00c7ADA";
+  return null;
+}
+
+const DATE_FIELDS=new Set(COLS.filter(([,,,,tipo])=>tipo==="date").map(([f])=>f));
+const TIME_FIELDS=new Set(COLS.filter(([,,,,tipo])=>tipo==="time").map(([f])=>f));
+function normalizeRowValues(row){
+  const out={...row};
+  if(out.gravidade!==undefined)out.gravidade=normalizeGravValue(out.gravidade);
+  if(out.tipo_ambulancia!==undefined)out.tipo_ambulancia=normalizeAmbValue(out.tipo_ambulancia);
+  Object.keys(out).forEach(f=>{
+    if(DATE_FIELDS.has(f))out[f]=normalizeDateValue(out[f]);
+    if(TIME_FIELDS.has(f))out[f]=normalizeTimeValue(out[f]);
+  });
+  // remove campos null/undefined para nao mandar strings vazias ao banco
+  Object.keys(out).forEach(f=>{ if(out[f]===null||out[f]==="")delete out[f]; });
+  return out;
+}
+
+// Modal: colar dados copiados do Excel (TSV) e importar como novos registros
+function PasteModal({onClose,onImport}){
+  const [txt,setTxt]=useState("");
+  const [busy,setBusy]=useState(false);
+  const HDR_MAP=useMemo(()=>{
+    const m={};
+    COLS.forEach(([f,planilha,xls])=>{ m[normHdr(planilha)]=f; m[normHdr(xls)]=f; });
+    return m;
+  },[]);
+  function parse(){
+    const lines=txt.replace(/\r/g,"").split("\n").filter(l=>l.trim()!=="");
+    if(lines.length===0)return [];
+    const firstCells=lines[0].split("\t").map(normHdr);
+    const matched=firstCells.filter(c=>HDR_MAP[c]).length;
+    const hasHeader = matched>=Math.max(2,Math.floor(firstCells.length*0.4));
+    let fieldOrder;
+    let dataLines;
+    if(hasHeader){
+      fieldOrder=firstCells.map(c=>HDR_MAP[c]||null);
+      dataLines=lines.slice(1);
+    }else{
+      // B3: SEM FALLBACK. Antes assumia a ordem das 24 colunas de COLS — se a
+      // copia do CROSS omitisse uma coluna (PROCEDIMENTO some com frequencia,
+      // posicao 6), TODO o lote entrava deslocado uma casa e sem aviso:
+      // especialidade recebia diagnostico, status recebia gravidade. Foi assim
+      // que "TOMOGRAFIA" foi parar em instituicao_destino e "HEMODIALISE" em
+      // status. Em import de lote, errar em silencio e pior que recusar.
+      throw new Error("CABECALHO_NAO_RECONHECIDO");
+    }
+    return dataLines.map(line=>{
+      const cells=line.split("\t");
+      const row={};
+      fieldOrder.forEach((f,i)=>{ if(f && cells[i]!==undefined && cells[i]!=="") row[f]=cells[i].trim(); });
+      return normalizeRowValues(row);
+    }).filter(r=>Object.keys(r).length>0);
+  }
+  async function doImport(){
+    let rows;
+    try{ rows=parse(); }
+    catch(e){
+      alert("Cabecalho nao reconhecido.\n\nCopie tambem a LINHA DE CABECALHO da planilha, junto com os dados.\n\nSem o cabecalho nao da para saber a que coluna cada valor pertence — e um import as cegas grava os valores nos campos errados.");
+      return;
+    }
+    if(rows.length===0){alert("Nada reconhecível para importar. Cole os dados copiados do Excel incluindo a linha de cabeçalho.");return;}
+    setBusy(true);
+    await onImport(rows);
+    setBusy(false);
+  }
+  let erroParse=null;
+  let preview=[];
+  if(txt.trim()){
+    try{ preview=parse(); }
+    catch(e){ erroParse=e.message; preview=[]; }
+  }
+  // B4: valida cada linha contra o dicionario de dominio (canon.js).
+  // Pega valor que pertence a OUTRO campo — o sintoma do deslocamento — e
+  // valor simplesmente desconhecido. Avisa, nao bloqueia: quem digita decide.
+  const avisos=[];
+  if(!erroParse && typeof Canon!=="undefined"){
+    preview.forEach((row,i)=>{
+      const v=Canon.validarLinha(row);
+      v.problemas.forEach(pr=>avisos.push({linha:i+1,msg:pr.msg,tipo:pr.tipo}));
+    });
+  }
+  return(
+    <div className="mbk">
+      <div className="mdl" style={{maxWidth:640}}>
+        <div className="mhd">
+          <div><h2>Colar da planilha (Excel)</h2><p>Copie as células no Excel e cole aqui</p></div>
+          <button className="btn btn-g btn-sm" onClick={onClose}><Ico n="x" s={13}/></button>
+        </div>
+        <div className="mbd">
+          <div className="fsc">
+            <textarea rows={10} value={txt} onChange={e=>setTxt(e.target.value)}
+              placeholder="Cole aqui (Ctrl+V) as linhas copiadas do Excel. Se a primeira linha for o cabeçalho das colunas, ele será reconhecido automaticamente."
+              style={{width:"100%",padding:"8px 10px",border:"1px solid #E2E8F0",borderRadius:7,fontSize:12,fontFamily:"monospace",resize:"vertical",outline:"none"}}/>
+          </div>
+          {txt.trim()&&erroParse&&
+            <div style={{fontSize:12,color:"#991B1B",background:"#FEF2F2",border:"1px solid #FECACA",borderRadius:8,padding:"10px 12px",lineHeight:1.5}}>
+              <b>Cabeçalho não reconhecido.</b><br/>
+              Copie também a <b>linha de cabeçalho</b> da planilha, junto com os dados.
+              Sem ela não dá para saber a que coluna cada valor pertence, e o import gravaria os valores nos campos errados.
+            </div>}
+          {txt.trim()&&!erroParse&&<div style={{fontSize:11,color:"#64748B"}}>{preview.length} linha{preview.length!==1?"s":""} reconhecida{preview.length!==1?"s":""} para importar.</div>}
+          {txt.trim()&&!erroParse&&avisos.length>0&&
+            <div style={{fontSize:11,color:"#92400E",background:"#FFFBEB",border:"1px solid #FDE68A",borderRadius:8,padding:"10px 12px",marginTop:8,lineHeight:1.6}}>
+              <b>{avisos.length} valor{avisos.length!==1?"es":""} suspeito{avisos.length!==1?"s":""}:</b>
+              <ul style={{margin:"6px 0 0",paddingLeft:16}}>
+                {avisos.slice(0,8).map((a,i)=><li key={i}>Linha {a.linha}: {a.msg}</li>)}
+              </ul>
+              {avisos.length>8&&<div style={{marginTop:4}}>…e mais {avisos.length-8}.</div>}
+              <div style={{marginTop:6,color:"#78350F"}}>Pode importar assim mesmo — os valores ficam marcados como não classificados no painel.</div>
+            </div>}
+        </div>
+        <div className="mft">
+          <button className="btn btn-g" onClick={onClose}>Cancelar</button>
+          <button className="btn btn-p" disabled={busy||!txt.trim()} onClick={doImport}>{busy?"Importando…":`Importar ${preview.length||""}`}</button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// Modal: lista de erros de uma importação (Excel/JSON/Kanban), com nomes e motivo
+function ImportResultModal({data,onClose}){
+  // data = {tipo, ok, total, itens:[{nome,erro}]}
+  const hasErrors = data.itens && data.itens.length > 0;
+  return(
+    <div className="mbk">
+      <div className="mdl" style={{maxWidth:540}}>
+        <div className="mhd">
+          <div>
+            <h2>{hasErrors ? "⚠ Importação concluída com erros" : "✅ Importação concluída"}</h2>
+            <p style={{marginTop:4,fontSize:12,color:"#64748B"}}>{data.tipo}</p>
+          </div>
+          <button className="btn btn-g btn-sm" onClick={onClose}><Ico n="x" s={13}/></button>
+        </div>
+        <div className="mbd">
+          {/* Resumo */}
+          <div style={{display:"flex",gap:10,marginBottom:14,flexWrap:"wrap"}}>
+            <div style={{flex:1,minWidth:120,background:"#F0FDF4",border:"1px solid #86EFAC",borderRadius:8,padding:"10px 14px",textAlign:"center"}}>
+              <div style={{fontSize:22,fontWeight:800,color:"#16A34A"}}>{data.ok}</div>
+              <div style={{fontSize:11,color:"#166534",marginTop:2}}>importado{data.ok!==1?"s":""} com sucesso</div>
+            </div>
+            {hasErrors&&(
+              <div style={{flex:1,minWidth:120,background:"#FEF2F2",border:"1px solid #FCA5A5",borderRadius:8,padding:"10px 14px",textAlign:"center"}}>
+                <div style={{fontSize:22,fontWeight:800,color:"#DC2626"}}>{data.itens.length}</div>
+                <div style={{fontSize:11,color:"#991B1B",marginTop:2}}>não importado{data.itens.length!==1?"s":""}</div>
+              </div>
+            )}
+            <div style={{flex:1,minWidth:120,background:"#F8FAFC",border:"1px solid #E2E8F0",borderRadius:8,padding:"10px 14px",textAlign:"center"}}>
+              <div style={{fontSize:22,fontWeight:800,color:"#475569"}}>{data.total||((data.ok||0)+(data.itens?.length||0))}</div>
+              <div style={{fontSize:11,color:"#64748B",marginTop:2}}>total processado{(data.total||0)!==1?"s":""}</div>
+            </div>
+          </div>
+          {/* Lista de erros */}
+          {hasErrors&&(
+            <>
+              <div style={{fontSize:11,fontWeight:700,color:"#991B1B",textTransform:"uppercase",letterSpacing:".05em",marginBottom:8}}>Registros não importados</div>
+              <div style={{maxHeight:260,overflowY:"auto",display:"flex",flexDirection:"column",gap:6}}>
+                {data.itens.map((it,i)=>(
+                  <div key={i} style={{padding:"8px 10px",border:"1px solid #FCA5A5",background:"#FEF2F2",borderRadius:8}}>
+                    <div style={{fontWeight:700,fontSize:12,color:"#0F172A"}}>{it.nome}</div>
+                    <div style={{fontSize:11,color:"#991B1B",marginTop:2,wordBreak:"break-word"}}>{it.erro}</div>
+                  </div>
+                ))}
+              </div>
+            </>
+          )}
+        </div>
+        <div className="mft">
+          <button className="btn btn-p" onClick={onClose}>Entendi</button>
+        </div>
+      </div>
+    </div>
+  );
+}
+// mantém alias antigo para compatibilidade
+function ImportErrorsModal({data,onClose}){ return <ImportResultModal data={data} onClose={onClose}/>; }
+
+function ExportResultModal({data,onClose}){
+  // data = {tipo, total, filename}
+  return(
+    <div className="mbk">
+      <div className="mdl" style={{maxWidth:400}}>
+        <div className="mhd">
+          <div><h2>✅ Exportação concluída</h2><p style={{marginTop:4,fontSize:12,color:"#64748B"}}>{data.tipo}</p></div>
+          <button className="btn btn-g btn-sm" onClick={onClose}><Ico n="x" s={13}/></button>
+        </div>
+        <div className="mbd">
+          <div style={{background:"#F0FDF4",border:"1px solid #86EFAC",borderRadius:10,padding:"16px",textAlign:"center"}}>
+            <div style={{fontSize:28,marginBottom:6}}>📄</div>
+            <div style={{fontSize:20,fontWeight:800,color:"#16A34A"}}>{data.total} registro{data.total!==1?"s":""}</div>
+            <div style={{fontSize:12,color:"#166534",marginTop:4}}>exportado{data.total!==1?"s":""} com sucesso</div>
+            {data.filename&&<div style={{fontSize:11,color:"#94A3B8",marginTop:8,wordBreak:"break-all"}}>{data.filename}</div>}
+          </div>
+        </div>
+        <div className="mft">
+          <button className="btn btn-p" onClick={onClose}>Fechar</button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function DuplicatesModal({rows,onClose,onDelete}){
+  const [selected,setSelected]=React.useState(new Set());
+  const [deleted,setDeleted]=React.useState(new Set());
+  const [confirming,setConfirming]=React.useState(false);
+
+  // Agrupa por nome normalizado
+  const groups=React.useMemo(()=>{
+    const norm=s=>(s||"").trim().toUpperCase().replace(/\s+/g," ");
+    const map={};
+    rows.forEach(r=>{
+      const k=norm(r.nome_paciente);
+      if(!map[k])map[k]=[];
+      map[k].push(r);
+    });
+    return Object.values(map).filter(g=>g.length>1);
+  },[rows]);
+
+  if(groups.length===0) return(
+    <div className="mbk">
+      <div className="mdl" style={{maxWidth:420}}>
+        <div className="mhd"><div><h2>✅ Sem duplicatas</h2><p>Nenhum nome repetido encontrado.</p></div>
+          <button className="btn btn-g btn-sm" onClick={onClose}><Ico n="x" s={13}/></button></div>
+        <div className="mbd"><p style={{color:"#64748B",fontSize:13}}>Todos os registros têm nomes únicos.</p></div>
+        <div className="mft"><button className="btn btn-p" onClick={onClose}>Fechar</button></div>
+      </div>
+    </div>
+  );
+
+  function toggleSel(id){ setSelected(p=>{const n=new Set(p);n.has(id)?n.delete(id):n.add(id);return n;}); }
+  function selectDups(group){
+    // seleciona todos exceto o primeiro (mais antigo)
+    setSelected(p=>{const n=new Set(p);group.slice(1).forEach(r=>n.add(r.id));return n;});
+  }
+
+  async function handleDelete(){
+    setConfirming(true);
+    const ids=[...selected];
+    for(const id of ids){ try{ await onDelete(id); setDeleted(p=>new Set([...p,id])); }catch{} }
+    setSelected(new Set());
+    setConfirming(false);
+  }
+
+  const GravDot=({g})=>{
+    const colors={VERMELHO:"#EF4444",emergencia:"#EF4444",AMARELO:"#EAB308",urgencia:"#EAB308",VERDE:"#22C55E",menor_gravidade:"#22C55E",CINZA:"#94A3B8",agendamento:"#94A3B8"};
+    return <span style={{display:"inline-block",width:8,height:8,borderRadius:"50%",background:colors[g]||"#94A3B8",flexShrink:0,marginRight:4}}/>;
+  };
+
+  return(
+    <div className="mbk">
+      <div className="mdl" style={{maxWidth:700}}>
+        <div className="mhd">
+          <div>
+            <h2>🔍 Verificação de duplicatas</h2>
+            <p style={{marginTop:3,fontSize:12,color:"#64748B"}}>{groups.length} nome{groups.length!==1?"s":""} repetido{groups.length!==1?"s":""} · {groups.reduce((a,g)=>a+g.length,0)} registros envolvidos</p>
+          </div>
+          <button className="btn btn-g btn-sm" onClick={onClose}><Ico n="x" s={13}/></button>
+        </div>
+        <div className="mbd" style={{maxHeight:"65vh",overflowY:"auto"}}>
+          {groups.map((group,gi)=>{
+            const visibles=group.filter(r=>!deleted.has(r.id));
+            if(visibles.length<=1)return null;
+            return(
+              <div key={gi} style={{marginBottom:20,background:"#F8FAFC",borderRadius:10,border:"1px solid #E2E8F0",overflow:"hidden"}}>
+                {/* cabeçalho do grupo */}
+                <div style={{padding:"8px 12px",background:"#EFF6FF",borderBottom:"1px solid #DBEAFE",display:"flex",alignItems:"center",justifyContent:"space-between",gap:8}}>
+                  <div style={{fontWeight:700,fontSize:12,color:"#1E40AF"}}>{visibles[0].nome_paciente} <span style={{fontWeight:400,color:"#64748B"}}>({visibles.length} registros)</span></div>
+                  <button className="btn btn-g btn-sm" onClick={()=>selectDups(visibles)} title="Marcar duplicatas para excluir">Marcar duplicatas</button>
+                </div>
+                {/* cards lado a lado */}
+                <div style={{display:"flex",gap:10,padding:10,flexWrap:"wrap"}}>
+                  {visibles.map(r=>{
+                    const isSel=selected.has(r.id);
+                    return(
+                      <div key={r.id} onClick={()=>toggleSel(r.id)} style={{flex:"1 1 240px",minWidth:220,maxWidth:320,background:"#fff",border:`2px solid ${isSel?"#EF4444":"#E2E8F0"}`,borderRadius:8,padding:"10px 12px",cursor:"pointer",transition:"border-color .15s",position:"relative"}}>
+                        {/* checkbox visual */}
+                        <div style={{position:"absolute",top:8,right:8,width:18,height:18,borderRadius:4,border:`2px solid ${isSel?"#EF4444":"#CBD5E1"}`,background:isSel?"#EF4444":"#fff",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
+                          {isSel&&<span style={{color:"#fff",fontSize:11,fontWeight:800,lineHeight:1}}>✓</span>}
+                        </div>
+                        <div style={{fontWeight:700,fontSize:12,color:"#0F172A",marginBottom:6,paddingRight:24}}>{r.nome_paciente}</div>
+                        <div style={{display:"flex",flexDirection:"column",gap:3}}>
+                          {r.data_solicitacao&&<div style={{fontSize:11,color:"#64748B"}}><span style={{color:"#94A3B8"}}>Data: </span>{r.data_solicitacao}{r.horario_solicitacao?" "+r.horario_solicitacao:""}</div>}
+                          {r.ficha_cross&&<div style={{fontSize:11,color:"#64748B"}}><span style={{color:"#94A3B8"}}>Ficha: </span>{r.ficha_cross}</div>}
+                          {r.diagnostico&&<div style={{fontSize:11,color:"#374151"}}><span style={{color:"#94A3B8"}}>Diag: </span>{r.diagnostico}</div>}
+                          {r.especialidade&&<div style={{fontSize:11,color:"#374151"}}><span style={{color:"#94A3B8"}}>Espec: </span>{r.especialidade}</div>}
+                          {r.setor&&<div style={{fontSize:11,color:"#64748B"}}><span style={{color:"#94A3B8"}}>Setor: </span>{r.setor}</div>}
+                          {r.status&&<div style={{fontSize:11,color:"#64748B"}}><span style={{color:"#94A3B8"}}>Status: </span>{r.status}</div>}
+                          {r.gravidade&&<div style={{fontSize:11,display:"flex",alignItems:"center"}}><GravDot g={r.gravidade}/><span style={{color:"#64748B"}}>{r.gravidade}</span></div>}
+                        </div>
+                        {isSel&&<div style={{marginTop:8,fontSize:10,fontWeight:700,color:"#EF4444",textTransform:"uppercase",letterSpacing:".05em"}}>Marcado para excluir</div>}
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            );
+          }).filter(Boolean)}
+          {groups.every(g=>g.filter(r=>!deleted.has(r.id)).length<=1)&&(
+            <div style={{textAlign:"center",padding:"24px",color:"#16A34A",fontSize:13,fontWeight:600}}>✅ Todas as duplicatas foram resolvidas!</div>
+          )}
+        </div>
+        <div className="mft" style={{justifyContent:"space-between"}}>
+          <div style={{fontSize:12,color:"#64748B"}}>{selected.size>0?`${selected.size} selecionado${selected.size!==1?"s":""} para excluir`:"Clique nos cards para selecionar"}</div>
+          <div style={{display:"flex",gap:8}}>
+            <button className="btn btn-g" onClick={onClose}>Fechar</button>
+            <button className="btn" style={{background:"#DC2626",color:"#fff",opacity:selected.size===0||confirming?0.5:1}} disabled={selected.size===0||confirming} onClick={handleDelete}>
+              {confirming?"Excluindo…":`🗑 Excluir ${selected.size} selecionado${selected.size!==1?"s":""}`}
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// Hook resize de colunas — usa mousedown no header
+// Hook resize — mapa {field: width} em vez de array posicional
+// Elimina qualquer problema de índice ao reordenar colunas
+function useColResize(initMap){
+  const [wmap,setWmap]=useState(initMap);
+  const wmapRef=useRef(initMap);
+  const drag=useRef(null);
+  useEffect(()=>{ wmapRef.current=wmap; },[wmap]);
+  function startDrag(field,e){
+    e.preventDefault();
+    e.stopPropagation();
+    const sw=wmapRef.current[field];
+    if(sw===undefined||isNaN(sw))return;
+    const sx=e.clientX;
+    drag.current={field,sx,sw};
+    function mv(ev){
+      if(!drag.current)return;
+      const {field,sx,sw}=drag.current;
+      const nw=Math.max(40,sw+(ev.clientX-sx));
+      if(isNaN(nw))return;
+      setWmap(m=>({...m,[field]:nw}));
+    }
+    function up(){drag.current=null;window.removeEventListener("mousemove",mv);window.removeEventListener("mouseup",up);}
+    window.addEventListener("mousemove",mv);
+    window.addEventListener("mouseup",up);
+  }
+  return {wmap,setWmap,startDrag};
+}
+
+function SplitButton({label,icon,variant,items,onMain}){
+  const [open,setOpen]=useState(false);
+  const [pos,setPos]=useState({top:0,right:0});
+  const ref=useRef();
+  const arrRef=useRef();
+  useEffect(()=>{
+    if(!open)return;
+    // calcular posição do dropdown relativa à viewport (position:fixed)
+    if(arrRef.current){
+      const r=arrRef.current.getBoundingClientRect();
+      setPos({top:r.bottom+4,right:window.innerWidth-r.right});
+    }
+    function close(e){if(ref.current&&!ref.current.contains(e.target))setOpen(false);}
+    document.addEventListener("mousedown",close);
+    return()=>document.removeEventListener("mousedown",close);
+  },[open]);
+  const cls=`spb spb-${variant}${open?" open":""}`;
+  const ChevronDown=()=>(
+    <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+      <path d="m6 9 6 6 6-6"/>
+    </svg>
+  );
+  return(
+    <div className={cls} ref={ref}>
+      <button className="btn spb-main" onClick={onMain}>
+        {icon&&<Ico n={icon} s={13}/>}{label}
+      </button>
+      <button ref={arrRef} className="btn spb-arr" onClick={()=>setOpen(o=>!o)} title="Mais opções">
+        <ChevronDown/>
+      </button>
+      <div className="spb-drop" style={open?{top:pos.top,right:pos.right}:{}}>
+        {items.map((it,i)=>
+          it==="---"
+            ?<div key={i} className="spb-sep"/>
+            :<button key={i} className="spb-item" onClick={()=>{it.action();setOpen(false);}}>
+                <Ico n={it.icon||"download"} s={13}/>{it.label}
+              </button>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// ─── Drag para reordenar colunas ───────────────────────────────────────────
+function useColDragOrder(initialOrder){
+  const [order,setOrder]=useState(initialOrder);
+  const dragIdx=useRef(null);
+  const dragOverIdx=useRef(null);
+
+  function onDragStart(i,e){
+    dragIdx.current=i;
+    e.dataTransfer.effectAllowed="move";
+    e.dataTransfer.setData("text/plain",i);
+  }
+  function onDragOver(i,e){
+    e.preventDefault();
+    if(dragIdx.current===null||dragIdx.current===i)return;
+    dragOverIdx.current=i;
+    // Preview visual: reordena temporariamente
+    setOrder(prev=>{
+      const next=[...prev];
+      const item=next.splice(dragIdx.current,1)[0];
+      next.splice(i,0,item);
+      dragIdx.current=i; // atualiza origem
+      return next;
+    });
+  }
+  function onDragEnd(){
+    dragIdx.current=null;
+    dragOverIdx.current=null;
+  }
+  return {order,setOrder,onDragStart,onDragOver,onDragEnd};
+}
+
+function App(){
+  const [rows,setRows]=useState([]);
+  const [loading,setLoading]=useState(true);
+  const [saving,setSaving]=useState(false);
+  const [modal,setModal]=useState(null);
+  const [showKanbanImport,setShowKanbanImport]=useState(false);
+  const jsonFileRef=useRef(null);
+  const [search,setSearch]=useState("");
+  // Foco vindo do dashboard: ?foco=<id do registro>&campo=<coluna>
+  // O painel de pendencias linka direto para a celula errada, em vez de so
+  // dizer que existe um valor invalido em algum lugar da planilha.
+  const [foco,setFoco]=useState(()=>{
+    const q=new URLSearchParams(window.location.search);
+    const id=q.get("foco");
+    return id?{id,campo:q.get("campo")||null}:null;
+  });
+  const [fG,setFG]=useState("");
+  const [fS,setFS]=useState("");
+  const [fM,setFM]=useState("");
+  const [sc,setSc]=useState("created_at");
+  const [sd,setSd]=useState("desc");
+  // Feature 4: seleção múltipla de linhas
+  const [selectedRows,setSelectedRows]=useState(new Set());
+  const [showDeleteConfirm,setShowDeleteConfirm]=useState(false);
+  // ── Persistência localStorage ──
+  const LS_WMAP='remocoes_col_widths';
+  const LS_ORDER='remocoes_col_order';
+  function loadLS(key,fallback){try{const v=localStorage.getItem(key);return v?JSON.parse(v):fallback;}catch{return fallback;}}
+  function saveLS(key,val){try{localStorage.setItem(key,JSON.stringify(val));}catch{}}
+
+  // Feature 1: ordem das colunas — APENAS colunas não-sticky (índices >= 4 em COLS)
+  const STK_COLS = [0,1,2,3];
+  const MOV_COLS_DEFAULT = COLS.map((_,i)=>i).filter(i=>!STK_COLS.includes(i));
+  const savedOrder=loadLS(LS_ORDER,null);
+  const {order:movColOrder,setOrder:setMovColOrder,onDragStart:colDragStart,onDragOver:colDragOver,onDragEnd:colDragEnd}=useColDragOrder(savedOrder||MOV_COLS_DEFAULT);
+  // Salvar ordem quando muda
+  const orderTimer=useRef(null);
+  useEffect(()=>{
+    clearTimeout(orderTimer.current);
+    orderTimer.current=setTimeout(()=>saveLS(LS_ORDER,movColOrder),300);
+  },[movColOrder]);
+
+  const {ts,push}=useToast();
+
+  // Mapa field→largura
+  const INIT_WMAP = useMemo(()=>{
+    const base={'#':48, actions:36};
+    COLS.forEach(([f,,,,,,,w])=>{ base[f]=w||100; });
+    const saved=loadLS(LS_WMAP,null);
+    return saved?{...base,...saved}:base;
+  },[]);
+  const {wmap,setWmap,startDrag}=useColResize(INIT_WMAP);
+
+  // Salvar larguras no localStorage quando mudam
+  const wmapTimer=useRef(null);
+  useEffect(()=>{
+    clearTimeout(wmapTimer.current);
+    wmapTimer.current=setTimeout(()=>saveLS(LS_WMAP,wmap),300);
+  },[wmap]);
+
+  // stkLefts calculado matematicamente — determinístico, nunca desalinha
+  const STK_FIELDS=['data_solicitacao','horario_solicitacao','ficha_cross','nome_paciente'];
+  const stkLefts=useMemo(()=>{
+    const lefts=[0]; // L0 = left do # = 0
+    let acc=wmap['#']||48;
+    STK_FIELDS.forEach(f=>{ lefts.push(acc); acc+=(wmap[f]||100); });
+    return lefts;
+  },[wmap]);
+  const tableRef=useRef(null);
+
+  // ── Double-click para auto-fit (Bug 3) ──
+  function autoFitCol(field){
+    if(!tableRef.current)return;
+    const th=tableRef.current.querySelector(`th[data-field="${field}"]`);
+    if(!th)return;
+    const span=th.querySelector('.col-label');
+    if(!span)return;
+    // Medir largura natural sem quebra
+    const prev=span.style.whiteSpace;
+    span.style.whiteSpace='nowrap';
+    const needed=span.scrollWidth+28; // padding + seta sort + handle
+    span.style.whiteSpace=prev;
+    const newW=Math.max(50,Math.min(400,needed));
+    setWmap(m=>({...m,[field]:newW}));
+  }
+
+  const load=useCallback(async()=>{
+    setLoading(true);
+    try{const d=await dbGet("remocoes?select=*&order=created_at.desc");setRows(Array.isArray(d)?d:[]);}
+    catch(e){push("Erro: "+e.message,"err");}
+    finally{setLoading(false);}
+  },[]);
+  useEffect(()=>{load();},[]);
+
+  const handleSave=async(form)=>{
+    setSaving(true);
+    try{
+      let p={...form};
+      if(p.hora_solic_ambulancia&&p.horario_saida_ambulancia&&!p.tempo_espera)
+        p.tempo_espera=calcTempo(p.hora_solic_ambulancia,p.horario_saida_ambulancia);
+      if(p.horario_saida_ambulancia&&p.horario_retorno&&!p.duracao_remocao)
+        p.duracao_remocao=calcTempo(p.horario_saida_ambulancia,p.horario_retorno);
+      // normaliza gravidade e tipo_ambulancia para os valores aceitos pelo banco
+      if(p.gravidade!==undefined&&p.gravidade!==null&&p.gravidade!=="")
+        p.gravidade=normalizeGravValue(p.gravidade)||null;
+      if(p.tipo_ambulancia!==undefined&&p.tipo_ambulancia!==null&&p.tipo_ambulancia!=="")
+        p.tipo_ambulancia=normalizeAmbValue(p.tipo_ambulancia)||null;
+      Object.keys(p).forEach(k=>{if(p[k]==="")p[k]=null;});
+      // Garantir defaults para campos NOT NULL do banco
+      if(p.finalizado===undefined||p.finalizado===null) p.finalizado=false;
+      if(p.permaneceu===undefined||p.permaneceu===null) p.permaneceu=false;
+      console.log("[handleSave] payload:", JSON.stringify({finalizado:p.finalizado,permaneceu:p.permaneceu}));
+      if(form.id){await api({action:"update",id:form.id,...p});push("Atualizado");}
+      else{await api({action:"create",...p});push("Criado!");}
+      setModal(null);await load();
+    }catch(e){push(e.message||"Erro","err");}
+    finally{setSaving(false);}
+  };
+
+  const handleCell=async(rowId,field,value)=>{
+    try{
+      // Booleanos: preservar true/false sem converter para null
+      const isBool = (value===true||value===false);
+      const safeVal = isBool ? value : (value||null);
+      const u={action:"update",id:rowId,[field]:safeVal};
+      const row=rows.find(r=>r.id===rowId);
+      if(row){
+        const hs=field==="hora_solic_ambulancia"?value:row.hora_solic_ambulancia;
+        const hsa=field==="horario_saida_ambulancia"?value:row.horario_saida_ambulancia;
+        const hr=field==="horario_retorno"?value:row.horario_retorno;
+        // Feature 3: se campo calculado foi limpo (value vazio), recalcula
+        const teManual=field==="tempo_espera"?value:null;
+        const durManual=field==="duracao_remocao"?value:null;
+        const te = teManual!==null ? (teManual||calcTempo(hs,hsa)) : calcTempo(hs,hsa);
+        const dur = durManual!==null ? (durManual||calcTempo(hsa,hr)) : calcTempo(hsa,hr);
+        if(te)u.tempo_espera=te;
+        if(dur)u.duracao_remocao=dur;
+      }
+      await api(u);
+      setRows(r=>r.map(x=>x.id===rowId?{...x,[field]:safeVal,...(u.tempo_espera?{tempo_espera:u.tempo_espera}:{}),...(u.duracao_remocao?{duracao_remocao:u.duracao_remocao}:{})}:x));
+    }catch(e){push(e.message,"err");}
+  };
+
+  const handleDelete=async(id)=>{
+    if(!id){push("Este registro não tem ID válido — recarregue a página e tente novamente.","err");return;}
+    if(!confirm("Excluir este registro permanentemente?"))return;
+    try{
+      await api({action:"delete",id});
+      push("Excluído");
+      setRows(r=>r.filter(x=>x.id!==id));
+    }catch(e){
+      push("Erro ao excluir: "+(e.message||"desconhecido")+" — recarregando a lista.","err");
+      await load();
+    }
+  };
+
+  // Feature 4: deletar linhas selecionadas
+  const handleDeleteSelected=async()=>{
+    const ids=[...selectedRows];
+    if(ids.length===0)return;
+    setSaving(true);
+    let ok=0,fail=0;
+    for(const id of ids){
+      try{await api({action:"delete",id});ok++;}
+      catch{fail++;}
+    }
+    setSaving(false);
+    setSelectedRows(new Set());
+    setShowDeleteConfirm(false);
+    push(`${ok} registro${ok!==1?"s":""} excluído${ok!==1?"s":""}${fail>0?` (${fail} falharam)`:""}`,fail>0?"err":"ok");
+    await load();
+  };
+
+  const handleDeleteAll=async()=>{
+    if(rows.length===0)return;
+    const conf=prompt(`Isso vai excluir TODOS os ${rows.length} registros da planilha, permanentemente. Digite EXCLUIR para confirmar:`);
+    if(conf!=="EXCLUIR")return;
+    setSaving(true);
+    let ok=0,fail=0;
+    for(const r of rows){
+      try{await api({action:"delete",id:r.id});ok++;}
+      catch{fail++;}
+    }
+    setSaving(false);
+    push(`${ok} registro${ok!==1?"s":""} excluído${ok!==1?"s":""}${fail>0?` (${fail} falharam)`:""}`,fail>0?"err":"ok");
+    await load();
+  };
+
+  const [showPaste,setShowPaste]=useState(false);
+  const [activeRow,setActiveRow]=useState(null);
+
+  // O Kanban usa gravidades extras (andamento_cor, finalizado_cor) que não existem
+  // no enum de gravidade da planilha de remoções — isso causava erro 500 ao importar
+  // pela importação do Kanban. Mapeamos para o valor equivalente mais próximo aceito pela planilha.
+  // O banco aceita APENAS: VERMELHO, AMARELO, VERDE, CINZA.
+  // O kanban usa chaves minúsculas e extras — tudo mapeado aqui.
+  const KANBAN_TO_DB_GRAV={
+    emergencia:"VERMELHO",urgencia:"AMARELO",menor_gravidade:"VERDE",
+    agendamento:"CINZA",andamento_cor:"AMARELO",finalizado_cor:"CINZA",retorno:"CINZA",
+    VERMELHO:"VERMELHO",AMARELO:"AMARELO",VERDE:"VERDE",CINZA:"CINZA",
+  };
+  function normalizeKanbanGrav(v){
+    if(!v)return "AMARELO";
+    return KANBAN_TO_DB_GRAV[v]||"AMARELO";
+  }
+
+  const handleImport=async(cards)=>{
+    let ok=0;
+    const fails=[];
+    for(const c of cards){
+      try{
+        const hoje=new Date().toISOString().split("T")[0];
+        const agora=new Date().toLocaleTimeString("pt-BR",{hour:"2-digit",minute:"2-digit"});
+        await api({action:"create",nome_paciente:c.nome||"",setor:c.setor||"",especialidade:c.rec||"",diagnostico:c.hd||"",instituicao_destino:c.hosp||c.unidade_receptora||"",tipo_ambulancia:AM[c.amb]||"",gravidade:normalizeKanbanGrav(c.grav),data_solicitacao:hoje,horario_solicitacao:c.hora_adm||agora,ficha_cross:c.ficha_cross||"",medico:c.medico_solic||"",horario_saida_ambulancia:c.saida||"",horario_retorno:c.retorno||"",data_resposta_cross:c.data_resolucao||"",horario_resposta_cross:c.hora_resolucao||"",status:"PACIENTE AGUARDANDO AMBULÂNCIA"});
+        ok++;
+      }catch(e){fails.push({nome:c.nome||"(sem nome)",erro:e.message||"erro desconhecido"});}
+    }
+    const total=ok+fails.length;
+    push(`${ok}/${total} importado${ok!==1?"s":""}`,fails.length>0?"err":"ok");
+    setImportErrors({tipo:"Kanban",ok,total,itens:fails});
+    await load();
+  };
+
+  const FIELDS=COLS.map(([f])=>f);
+  const handleImportJSON=async(file)=>{
+    if(!file)return;
+    try{
+      const text=await file.text();
+      const json=JSON.parse(text);
+      let items=[];
+      if(Array.isArray(json))items=json;
+      else if(Array.isArray(json.remocoes))items=json.remocoes;
+      else{push("JSON inválido: nenhum dado de remoção encontrado no arquivo.","err");return;}
+      if(items.length===0){push("Nenhum registro encontrado no arquivo.","err");return;}
+      let ok=0;
+      const fails=[];
+      for(const item of items){
+        try{
+          const p={};
+          FIELDS.forEach(f=>{if(item[f]!==undefined&&item[f]!==null&&item[f]!=="")p[f]=item[f];});
+          if(Object.keys(p).length===0)continue;
+          await api({action:"create",...normalizeRowValues(p)});
+          ok++;
+        }catch(e){fails.push({nome:item.nome_paciente||"(sem nome)",erro:e.message||"erro desconhecido"});}
+      }
+      const total=ok+fails.length;
+      push(`${ok}/${total} importado${ok!==1?"s":""} do JSON`,fails.length>0?"err":"ok");
+      setImportErrors({tipo:"Importar JSON",ok,total,itens:fails});
+      await load();
+    }catch(e){push("Erro ao ler arquivo JSON: "+e.message,"err");}
+  };
+
+  const [importErrors,setImportErrors]=useState(null); // {tipo, ok, total, itens:[{nome,erro}]}
+  const [exportResult,setExportResult]=useState(null); // {tipo, total, filename}
+  const [showDuplicates,setShowDuplicates]=useState(false);
+
+  const handleImportPaste=async(pastedRows)=>{
+    let ok=0;
+    const fails=[];
+    for(const p of pastedRows){
+      try{await api({action:"create",...p});ok++;}
+      catch(e){fails.push({nome:p.nome_paciente||"(sem nome)",erro:e.message||"erro desconhecido"});}
+    }
+    const total=ok+fails.length;
+    push(`${ok}/${total} importado${ok!==1?"s":""} da planilha`,fails.length>0?"err":"ok");
+    setImportErrors({tipo:"Colar do Excel",ok,total,itens:fails});
+    setShowPaste(false);
+    await load();
+  };
+
+  const [blankRowId,setBlankRowId]=useState(null);
+  const handleAddBlank=async()=>{
+    try{
+      await api({action:"create"});
+      const latest=await dbGet("remocoes?select=id&order=created_at.desc&limit=1");
+      const newId=Array.isArray(latest)&&latest[0]?latest[0].id:null;
+      push("Linha em branco criada — cole os dados copiados do Excel nela.");
+      setBlankRowId(newId);
+      await load();
+    }catch(e){push("Erro ao criar linha: "+(e.message||"desconhecido"),"err");}
+  };
+  const handlePasteIntoRow=async(rowId)=>{
+    try{
+      const text=await navigator.clipboard.readText();
+      if(!text||!text.trim()){push("Área de transferência vazia. Copie a linha no Excel primeiro (Ctrl+C).","err");return;}
+      const cells=text.replace(/\r/g,"").split("\n")[0].split("\t");
+      const fieldOrder=COLS.map(([f])=>f);
+      const p={};
+      fieldOrder.forEach((f,i)=>{ if(cells[i]!==undefined && cells[i]!=="") p[f]=cells[i].trim(); });
+      const norm=normalizeRowValues(p);
+      if(Object.keys(norm).length===0){push("Nada reconhecível na área de transferência.","err");return;}
+      await api({action:"update",id:rowId,...norm});
+      push("Linha preenchida a partir da área de transferência.");
+      setBlankRowId(null);
+      await load();
+    }catch(e){
+      push("Não foi possível ler a área de transferência automaticamente. Use o botão «Colar do Excel» no lugar.","err");
+    }
+  };
+
+  // Bug 5 fix: resetSort volta à ordem de inserção (created_at desc)
+  function resetSort(){setSc("created_at");setSd("desc");}
+  function toggleSort(col){
+    if(sc===col){
+      if(sd==="asc") setSd("desc");
+      else { setSc("created_at"); setSd("desc"); } // 3º clique: reset
+    } else { setSc(col); setSd("asc"); }
+  }
+
+  const filtered=useMemo(()=>{
+    let d=rows;
+    if(search){const s=search.toLowerCase();d=d.filter(r=>(r.nome_paciente||"").toLowerCase().includes(s)||(r.ficha_cross||"").toLowerCase().includes(s)||(r.diagnostico||"").toLowerCase().includes(s)||(r.instituicao_destino||"").toLowerCase().includes(s));}
+    if(fG)d=d.filter(r=>r.gravidade===fG);
+    if(fS)d=d.filter(r=>(r.status||"").includes(fS));
+    if(fM)d=d.filter(r=>(r.data_solicitacao||"").startsWith(fM));
+    return [...d].sort((a,b)=>{
+      const av=a[sc];
+      const bv=b[sc];
+      // created_at e campos de data/hora: comparação cronológica correta
+      if(sc==="created_at"||COLS.find(([f])=>f===sc)?.[4]==="date"||COLS.find(([f])=>f===sc)?.[4]==="time"){
+        const as=String(av||"");
+        const bs=String(bv||"");
+        if(!as&&!bs)return 0;
+        if(!as)return 1;
+        if(!bs)return -1;
+        return sd==="asc"?as.localeCompare(bs):bs.localeCompare(as);
+      }
+      const avs=(av||"").toString().toLowerCase();
+      const bvs=(bv||"").toString().toLowerCase();
+      return sd==="asc"?avs.localeCompare(bvs,"pt"):bvs.localeCompare(avs,"pt");
+    });
+  },[rows,search,fG,fS,fM,sc,sd]);
+
+  const stats=useMemo(()=>{
+    const total=filtered.length;
+    const conc=filtered.filter(r=>["FICHA FINALIZADA","FICHA FINALIZADA VIA CROSS","FICHA FINALIZADA PELA CROSS","REMOÇÃO CONCLUÍDA","CONCLUIDO"].includes(r.status)).length;
+    const nao=filtered.filter(r=>(r.status||"").includes("NÃO REALIZADA")).length;
+    const verm=filtered.filter(r=>r.gravidade==="emergencia"||r.gravidade==="VERMELHO").length;
+    const tempos=filtered.filter(r=>r.tempo_espera).map(r=>{const[h,m]=r.tempo_espera.split(":").map(Number);return h*60+m;}).filter(n=>!isNaN(n));
+    const med=tempos.length?Math.round(tempos.reduce((a,b)=>a+b,0)/tempos.length):0;
+    const medH=Math.floor(med/60);
+    const medM=med%60;
+    const medStr=tempos.length?(medH>0?`${medH}h ${String(medM).padStart(2,"0")}min`:`${medM}min`):"—";
+    return {total,conc,nao,verm,medStr,ct:tempos.length};
+  },[filtered]);
+
+  function exportXLS(){
+    if(!window.XLSX){push("XLSX não carregado","err");return;}
+    try{
+      const safe=v=>{
+        if(v===null||v===undefined)return "";
+        if(typeof v==="boolean")return v?"Sim":"Não";
+        if(typeof v==="object")return String(v);
+        return String(v);
+      };
+      const hdr=["#",...COLS.map(([,pl])=>String(pl||""))];
+      const snapshot=[...filtered]; // captura o array neste momento
+      const data=snapshot.map((r,i)=>[i+1,...COLS.map(([f])=>{
+        const v=safe(r[f]);
+        if(f==="data_solicitacao"&&v){try{return new Date(v+"T12:00:00").toLocaleDateString("pt-BR");}catch{return String(v);}}
+        if(f==="gravidade"&&v)return String(gravInfo(v).label||v);
+        return String(v);
+      })]);
+      const xlsSheet=window.XLSX.utils.aoa_to_sheet([hdr,...data]);
+      const cw={data_solicitacao:12,horario_solicitacao:8,ficha_cross:18,nome_paciente:26,setor:18,procedimento:14,especialidade:18,diagnostico:24,status:28,gravidade:14,data_resposta_cross:12,horario_resposta_cross:8,instituicao_destino:20,tipo_ambulancia:12,data_saida_ambulancia:12,hora_solic_ambulancia:10,horario_saida_ambulancia:10,tempo_espera:10,observacao:28,enfermeiro:16,tecnico_auxiliar:16,medico:16,horario_retorno:10,duracao_remocao:12};
+      xlsSheet["!cols"]=[{wch:4},...COLS.map(([f])=>({wch:cw[f]||14}))];
+      const wb=window.XLSX.utils.book_new();
+      window.XLSX.utils.book_append_sheet(wb,"Remoções",xlsSheet);
+      const fname=`remocoes_${new Date().toISOString().slice(0,10)}.xlsx`;
+      window.XLSX.writeFile(wb,fname);
+      setExportResult({tipo:"Excel",total:data.length,filename:fname});
+    }catch(e){push("Erro ao exportar Excel: "+e.message,"err");}
+  }
+
+  function exportJSON(){
+    try{
+      const data=filtered.map(r=>{
+        const o={};
+        COLS.forEach(([f])=>{o[f]=r[f]||"";});
+        return o;
+      });
+      const blob=new Blob([JSON.stringify(data,null,2)],{type:"application/json"});
+      const url=URL.createObjectURL(blob);
+      const a=document.createElement("a");
+      a.href=url;
+      a.download=`remocoes_${new Date().toISOString().slice(0,10)}.json`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+      setExportResult({tipo:"JSON",total:data.length,filename:`remocoes_${new Date().toISOString().slice(0,10)}.json`});
+    }catch(e){push("Erro ao exportar JSON: "+e.message,"err");}
+  }
+
+  return(
+    <div className="app">
+      <div className="topbar">
+        <div className="ti">
+          <div className="tb">
+            <div className="tico"><span>+</span></div>
+            <div><div className="tn">Gerência de Enfermagem</div><div className="ts">Controle de Remoções</div></div>
+          </div>
+          <a href="." style={{padding:"5px 10px",border:"1px solid #334155",borderRadius:6,background:"none",color:"#94A3B8",fontSize:11,textDecoration:"none",display:"inline-flex",alignItems:"center",gap:5}}>← Kanban</a>
+        </div>
+      </div>
+
+      <div className="toolbar">
+        <div className="tbi">
+          <div className="sw"><Ico n="search" s={13}/><input className="si" placeholder="Buscar nome, ficha…" value={search} onChange={e=>setSearch(e.target.value)}/></div>
+          {foco&&<div style={{display:"flex",alignItems:"center",gap:8,background:"#FFF7ED",border:"1px solid #FED7AA",borderRadius:8,padding:"5px 10px",fontSize:11.5,color:"#9A3412"}}>
+            <span>Corrigindo{foco.campo?<> o campo <b>{foco.campo}</b></>:""} — linha destacada</span>
+            <button className="btn btn-g btn-sm" onClick={()=>{setFoco(null);history.replaceState(null,"",window.location.pathname);}} style={{padding:"2px 8px"}}>✕</button>
+          </div>}
+          <select className="fsel" value={fG} onChange={e=>setFG(e.target.value)}>
+            <option value="">Gravidade</option>
+            {G_OPTS.map(o=><option key={o} value={o}>{gravInfo(o).label}</option>)}
+          </select>
+          <select className="fsel" value={fS} onChange={e=>setFS(e.target.value)}>
+            <option value="">Status</option>
+            <option value="FINALIZADA">Finalizada</option>
+            <option value="NÃO REALIZADA">Não realizada</option>
+            <option value="REMOÇÃO">Em remoção</option>
+            <option value="AGUARDANDO">Aguardando</option>
+            <option value="ENCERRADA">Encerrada</option>
+          </select>
+          <input type="month" className="fsel" value={fM} onChange={e=>setFM(e.target.value)} style={{width:"auto"}}/>
+          {(search||fG||fS||fM)&&<button className="btn btn-g btn-sm" onClick={()=>{setSearch("");setFG("");setFS("");setFM("");}}>✕ Filtros</button>}
+          {sc!=="created_at"&&<button className="btn btn-g btn-sm" title="Voltar à ordem de inserção (mais recente primeiro)" onClick={resetSort} style={{color:"#F59E0B",borderColor:"#FCD34D"}}>⇅ Resetar ordem</button>}
+          <div style={{marginLeft:"auto",display:"flex",gap:6,flexShrink:0,alignItems:"center"}}>
+            <input type="file" accept=".json,application/json" ref={jsonFileRef} style={{display:"none"}}
+              onChange={e=>{const f=e.target.files[0];e.target.value="";handleImportJSON(f);}}/>
+
+            <SplitButton
+              label="Exportar"
+              icon="download"
+              variant="green"
+              onMain={exportXLS}
+              items={[
+                {label:"Excel (.xlsx)",    icon:"excel",    action:exportXLS},
+                {label:"JSON (.json)",     icon:"download", action:exportJSON},
+              ]}
+            />
+            <SplitButton
+              label="Importar"
+              icon="import"
+              variant="blue"
+              onMain={()=>setShowKanbanImport(true)}
+              items={[
+                {label:"Do Kanban",        icon:"import",   action:()=>setShowKanbanImport(true)},
+                {label:"Colar do Excel",   icon:"excel",    action:()=>setShowPaste(true)},
+                {label:"Arquivo JSON",     icon:"download", action:()=>jsonFileRef.current&&jsonFileRef.current.click()},
+              ]}
+            />
+            <button className="btn btn-p" onClick={()=>setModal({})}><Ico n="plus"/> Novo</button>
+            <button className="btn btn-g" onClick={()=>setShowDuplicates(true)} title="Verificar registros com nomes repetidos">🔍 Duplicatas</button>
+            <button className="btn btn-g btn-sm" title="Restaurar ordem e largura original das colunas" onClick={()=>{setMovColOrder(MOV_COLS_DEFAULT);const base={'#':48,actions:36};COLS.forEach(([f,,,,,,,w])=>{base[f]=w||100;});setWmap(base);localStorage.removeItem(LS_WMAP);localStorage.removeItem(LS_ORDER);}} style={{fontSize:11,padding:"4px 8px"}}>⚏ Colunas</button>
+            <button className="btn btn-g" style={{color:"#DC2626",borderColor:"#FCA5A5"}} disabled={rows.length===0} onClick={handleDeleteAll}><Ico n="trash" s={13}/> Excluir todos</button>
+          </div>
+        </div>
+      </div>
+
+      <div className="stats">
+        <div className="chip"><span className="cl">Total</span><span className="cv">{stats.total}</span></div>
+        <div className="csep"/>
+        <div className="chip"><div className="cdot" style={{background:"#16A34A"}}/><span className="cl">Concluídas</span><span className="cv" style={{color:"#16A34A"}}>{stats.conc}</span></div>
+        <div className="csep"/>
+        <div className="chip"><div className="cdot" style={{background:"#EF4444"}}/><span className="cl">Não realizadas</span><span className="cv" style={{color:"#EF4444"}}>{stats.nao}</span></div>
+        <div className="csep"/>
+        <div className="chip"><div className="cdot" style={{background:"#EF4444"}}/><span className="cl">Emergências</span><span className="cv" style={{color:"#EF4444"}}>{stats.verm}</span></div>
+        <div className="csep"/>
+        <div className="chip"><span className="cl">⏱ Média espera</span><span className="cv" style={{color:"#7C3AED"}}>{stats.medStr}</span><span className="cl" style={{marginLeft:4}}>({stats.ct} reg.)</span></div>
+      </div>
+
+      <div className="tw">
+        {loading?(<div className="empty" style={{marginTop:60}}><Ico n="pulse" s={24}/><p>Carregando…</p></div>)
+        :filtered.length===0?(<div className="empty" style={{marginTop:60}}><p>{rows.length===0?"Nenhum registro. Clique em «Novo» para começar.":"Nenhum resultado."}</p></div>)
+        :(
+          <table className="rt" ref={tableRef} style={{width:Object.values(wmap).reduce((a,b)=>a+b,0)}}>
+            <colgroup>
+              <col style={{width:wmap['#']}}/>
+              {STK_COLS.map((colIdx)=>{
+                const [f]=COLS[colIdx];
+                return <col key={f} style={{width:wmap[f]}}/>;
+              })}
+              {movColOrder.map((colIdx)=>{
+                const [f]=COLS[colIdx];
+                return <col key={f} style={{width:wmap[f]}}/>;
+              })}
+              <col style={{width:wmap.actions}}/>
+            </colgroup>
+            <thead><tr>
+              {/* Coluna # */}
+              <th className="stk stk-last" style={{position:"relative",textAlign:"center",cursor:"default",borderRight:"2px solid #475569",overflow:"hidden"}}>
+                <div style={{display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",gap:2,height:"100%"}}>
+                  <span style={{fontSize:9,color:"#94A3B8",lineHeight:1}}>#</span>
+                  <input type="checkbox" className="row-checkbox"
+                    checked={filtered.length>0&&selectedRows.size===filtered.length}
+                    onChange={e=>{
+                      if(e.target.checked) setSelectedRows(new Set(filtered.map(r=>r.id)));
+                      else setSelectedRows(new Set());
+                    }}
+                    title="Selecionar todos"
+                  />
+                </div>
+              </th>
+              {/* 4 Colunas sticky — renderizadas sempre primeiro, sem drag */}
+              {STK_COLS.map((colIdx,si)=>{
+                const [f,planilha,xls,kanban,,,tip]=COLS[colIdx];
+                const isLast=colIdx===3;
+                const isSorted=sc===f;
+                return(
+                  <th key={f} data-field={f}
+                    style={{position:"relative",cursor:"pointer",overflow:"hidden"}}
+                    className={`th-wrap${isSorted?" sorted":""} stk${isLast?" stk-last":""}`}>
+                    <div style={{display:"flex",alignItems:"flex-start",gap:2,paddingRight:10,userSelect:"none"}}
+                      onClick={()=>toggleSort(f)}>
+                      <span className="col-label" style={{fontSize:9,lineHeight:1.25,wordBreak:"break-word",flexGrow:1}}>{xls}</span>
+                      <span className={`sarr${isSorted?" on":""}`} style={{flexShrink:0,marginTop:1}}>
+                        {isSorted?(sd==="asc"?"▲":"▼"):"⇅"}
+                      </span>
+                    </div>
+                    <div
+                      style={{position:"absolute",right:0,top:0,width:8,height:"100%",cursor:"col-resize",zIndex:20,background:"transparent"}}
+                      onMouseDown={e=>{e.stopPropagation();startDrag(f,e);}}
+                      onDoubleClick={e=>{e.stopPropagation();autoFitCol(f);}}
+                      title="Arrastar para redimensionar / duplo-clique para ajustar"
+                    />
+                    <div className="tipbox">
+                      <strong>Planilha:</strong> {planilha}<br/>
+                      <strong>Kanban:</strong> {kanban||"—"}<br/>
+                      {tip}
+                    </div>
+                  </th>
+                );
+              })}
+              {/* Colunas móveis — reordenáveis via drag */}
+              {movColOrder.map((colIdx,mPos)=>{
+                const [f,planilha,xls,kanban,,,tip]=COLS[colIdx];
+                const isSorted=sc===f;
+                return(
+                  <th key={f} data-field={f}
+                    draggable
+                    onDragStart={(e)=>colDragStart(mPos,e)}
+                    onDragOver={(e)=>colDragOver(mPos,e)}
+                    onDragEnd={colDragEnd}
+                    style={{position:"relative",cursor:"pointer"}}
+                    className={`th-wrap${isSorted?" sorted":""}`}>
+                    <div style={{display:"flex",alignItems:"flex-start",gap:2,paddingRight:10,userSelect:"none"}}
+                      onClick={()=>toggleSort(f)}>
+                      <span className="th-drag-handle" title="Arraste para reordenar"
+                        onMouseDown={e=>e.stopPropagation()}>
+                        <svg width="8" height="10" viewBox="0 0 8 10" fill="currentColor">
+                          <circle cx="2" cy="2" r="1.2"/><circle cx="6" cy="2" r="1.2"/>
+                          <circle cx="2" cy="5" r="1.2"/><circle cx="6" cy="5" r="1.2"/>
+                          <circle cx="2" cy="8" r="1.2"/><circle cx="6" cy="8" r="1.2"/>
+                        </svg>
+                      </span>
+                      <span className="col-label" style={{fontSize:9,lineHeight:1.25,wordBreak:"break-word",flexGrow:1}}>{xls}</span>
+                      <span className={`sarr${isSorted?" on":""}`} style={{flexShrink:0,marginTop:1}}>
+                        {isSorted?(sd==="asc"?"▲":"▼"):"⇅"}
+                      </span>
+                    </div>
+                    <div
+                      style={{position:"absolute",right:0,top:0,width:8,height:"100%",cursor:"col-resize",zIndex:20,background:"transparent"}}
+                      onMouseDown={e=>{e.stopPropagation();startDrag(f,e);}}
+                      onDoubleClick={e=>{e.stopPropagation();autoFitCol(f);}}
+                      title="Arrastar para redimensionar / duplo-clique para ajustar"
+                    />
+                    <div className="tipbox">
+                      <strong>Planilha:</strong> {planilha}<br/>
+                      <strong>Kanban:</strong> {kanban||"—"}<br/>
+                      {tip}
+                    </div>
+                  </th>
+                );
+              })}
+              <th style={{cursor:"default",borderLeft:"1px solid #334155"}}></th>
+            </tr></thead>
+            <tbody>
+              {filtered.map((r,i)=>{
+                const gi=gravInfo(r.gravidade||"");
+                const isBlank=r.id===blankRowId;
+                const isActive=activeRow===r.id;
+                const isSelected=selectedRows.has(r.id);
+                const [L0,L1,L2,L3,L4]=stkLefts;
+
+                // Mapa de células das colunas MÓVEIS (não-sticky)
+                const movCellMap={
+                  "setor":<td><Cell rowId={r.id} field="setor" value={r.setor} tipo="sel" optsKey="ST_OPTS" onSave={handleCell}/></td>,
+                  "procedimento":<td><Cell rowId={r.id} field="procedimento" value={r.procedimento} tipo="sel" optsKey="P_OPTS" onSave={handleCell}/></td>,
+                  "especialidade":<td><Cell rowId={r.id} field="especialidade" value={r.especialidade} onSave={handleCell}/></td>,
+                  "diagnostico":<td><Cell rowId={r.id} field="diagnostico" value={r.diagnostico} onSave={handleCell}/></td>,
+                  "status":<td>{r.status?<div style={{padding:"2px 6px"}}><span className={`sb ${S_CLS[r.status]||"se"}`} title={r.status} style={{cursor:"pointer"}} onClick={()=>handleCell(r.id,"status","")}>{r.status}</span></div>:<Cell rowId={r.id} field="status" value={r.status} tipo="sel" optsKey="S_OPTS" onSave={handleCell}/> }</td>,
+                  "gravidade":<td>{r.gravidade?<div style={{padding:"2px 6px",cursor:"pointer"}} onClick={()=>handleCell(r.id,"gravidade","")}><span style={{display:"inline-block",padding:"1px 7px",borderRadius:99,fontSize:9,fontWeight:700,background:gi.bg,color:gi.fc,border:`1px solid ${gi.bd}`,whiteSpace:"nowrap"}}>{gi.label}</span></div>:<Cell rowId={r.id} field="gravidade" value={r.gravidade} tipo="sel" optsKey="G_OPTS" onSave={handleCell}/> }</td>,
+                  "data_resposta_cross":<td><Cell rowId={r.id} field="data_resposta_cross" value={r.data_resposta_cross} tipo="date" onSave={handleCell} fmtDisplay={fmtD}/></td>,
+                  "horario_resposta_cross":<td><Cell rowId={r.id} field="horario_resposta_cross" value={r.horario_resposta_cross} tipo="time" onSave={handleCell}/></td>,
+                  "instituicao_destino":<td><Cell rowId={r.id} field="instituicao_destino" value={r.instituicao_destino} onSave={handleCell}/></td>,
+                  "tipo_ambulancia":<td>{r.tipo_ambulancia?<div style={{padding:"2px 6px",cursor:"pointer"}} onClick={()=>handleCell(r.id,"tipo_ambulancia","")}><span className={`ab ${r.tipo_ambulancia==="AVANÇADA"?"aba":"abb"}`}>{r.tipo_ambulancia}</span></div>:<Cell rowId={r.id} field="tipo_ambulancia" value={r.tipo_ambulancia} tipo="sel" optsKey="A_OPTS" onSave={handleCell}/> }</td>,
+                  "data_saida_ambulancia":<td><Cell rowId={r.id} field="data_saida_ambulancia" value={r.data_saida_ambulancia} tipo="date" onSave={handleCell} fmtDisplay={fmtD}/></td>,
+                  "hora_solic_ambulancia":<td><Cell rowId={r.id} field="hora_solic_ambulancia" value={r.hora_solic_ambulancia} tipo="time" onSave={handleCell}/></td>,
+                  "horario_saida_ambulancia":<td><Cell rowId={r.id} field="horario_saida_ambulancia" value={r.horario_saida_ambulancia} tipo="time" onSave={handleCell}/></td>,
+                  "tempo_espera":<td><Cell rowId={r.id} field="tempo_espera" value={r.tempo_espera||calcTempo(r.hora_solic_ambulancia,r.horario_saida_ambulancia)||""} tipo="time" onSave={handleCell} colorStyle={{color:r.tempo_espera?"#7C3AED":"#6D28D9",fontWeight:700}}/></td>,
+                  "observacao":<td><Cell rowId={r.id} field="observacao" value={r.observacao} onSave={handleCell}/></td>,
+                  "enfermeiro":<td><Cell rowId={r.id} field="enfermeiro" value={r.enfermeiro} onSave={handleCell}/></td>,
+                  "tecnico_auxiliar":<td><Cell rowId={r.id} field="tecnico_auxiliar" value={r.tecnico_auxiliar} onSave={handleCell}/></td>,
+                  "medico":<td><Cell rowId={r.id} field="medico" value={r.medico} onSave={handleCell}/></td>,
+                  "horario_retorno":<td><Cell rowId={r.id} field="horario_retorno" value={r.horario_retorno} tipo="time" onSave={handleCell}/></td>,
+                  "duracao_remocao":<td><Cell rowId={r.id} field="duracao_remocao" value={r.duracao_remocao||calcTempo(r.horario_saida_ambulancia,r.horario_retorno)||""} tipo="time" onSave={handleCell} colorStyle={{color:r.duracao_remocao?"#0369A1":"#0284C7",fontWeight:700}}/></td>,
+                  "finalizado":<td style={{textAlign:"center"}}><BoolCell rowId={r.id} field="finalizado" value={r.finalizado} onSave={handleCell}/></td>,
+                  "permaneceu":<td style={{textAlign:"center"}}><BoolCell rowId={r.id} field="permaneceu" value={r.permaneceu} onSave={handleCell}/></td>,
+                };
+
+                return(
+                  <tr key={r.id}
+                    id={`row-${r.id}`}
+                    ref={foco && foco.id===r.id ? el=>{
+                      if(el && !el.dataset.rolou){
+                        el.dataset.rolou="1";
+                        setTimeout(()=>el.scrollIntoView({behavior:"smooth",block:"center"}),120);
+                      }
+                    } : null}
+                    className={isActive?"row-active":""}
+                    style={{
+                      ...(isBlank?{background:"#FEFCE8",outline:"2px solid #FDE047",outlineOffset:"-2px"}:{}),
+                      ...(foco && foco.id===r.id ? {background:"#FFF7ED",outline:"2px solid #FB923C",outlineOffset:"-2px"} : {}),
+                    }}
+                    onClick={()=>{setActiveRow(r.id); if(foco&&foco.id!==r.id) setFoco(null);}}>
+                    {/* Coluna # com checkbox */}
+                    <td className="stk stk-last" style={{left:L0,textAlign:"center",color:"#94A3B8",fontSize:10,fontWeight:700,borderRight:"2px solid #E2E8F0",padding:"0 4px",width:wmap['#'],maxWidth:wmap['#']}}>
+                      <div style={{display:"flex",flexDirection:"column",alignItems:"center",gap:2}}>
+                        <span style={{fontSize:10,lineHeight:1}}>{isBlank?<button className="btn btn-blue btn-sm" title="Colar linha copiada do Excel aqui" onClick={e=>{e.stopPropagation();handlePasteIntoRow(r.id);}} style={{padding:"2px 6px"}}><Ico n="excel" s={11}/></button>:i+1}</span>
+                        <input type="checkbox" className="row-checkbox"
+                          checked={isSelected}
+                          onClick={e=>e.stopPropagation()}
+                          onChange={e=>{
+                            setSelectedRows(prev=>{
+                              const next=new Set(prev);
+                              e.target.checked?next.add(r.id):next.delete(r.id);
+                              return next;
+                            });
+                          }}
+                        />
+                      </div>
+                    </td>
+                    {/* 4 Colunas sticky — sempre primeiro, na ordem fixa */}
+                    <td className="stk" style={{left:L1}}><div style={{padding:"2px 6px",fontSize:10,whiteSpace:"nowrap"}}>{fmtD(r.data_solicitacao)||"—"}</div></td>
+                    <td className="stk" style={{left:L2}}><Cell rowId={r.id} field="horario_solicitacao" value={r.horario_solicitacao} tipo="time" onSave={handleCell}/></td>
+                    <td className="stk" style={{left:L3}}><Cell rowId={r.id} field="ficha_cross" value={r.ficha_cross} onSave={handleCell}/></td>
+                    <td className="stk stk-last" style={{left:L4}}><Cell rowId={r.id} field="nome_paciente" value={r.nome_paciente} onSave={handleCell}/></td>
+                    {/* Colunas móveis na ordem definida por movColOrder */}
+                    {movColOrder.map(colIdx=>{
+                      const [f]=COLS[colIdx];
+                      return React.cloneElement(movCellMap[f],{key:f});
+                    })}
+                    <td style={{textAlign:"center"}}>
+                      <button className="delbtn" title="Excluir" onClick={()=>handleDelete(r.id)}><Ico n="trash" s={11}/></button>
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        )}
+      </div>
+
+      {/* Feature 4: Barra de seleção múltipla */}
+      {selectedRows.size>0&&(
+        <div className="bulk-bar">
+          <strong>{selectedRows.size}</strong>
+          <span>linha{selectedRows.size!==1?"s":""} selecionada{selectedRows.size!==1?"s":""}</span>
+          <button className="btn btn-g btn-sm" onClick={()=>setSelectedRows(new Set())} style={{color:"#94A3B8"}}>Cancelar</button>
+          <button className="btn btn-sm" style={{background:"#DC2626",color:"#fff",border:"none"}}
+            onClick={()=>setShowDeleteConfirm(true)}>
+            <Ico n="trash" s={11}/> Excluir {selectedRows.size} selecionada{selectedRows.size!==1?"s":""}
+          </button>
+        </div>
+      )}
+      {/* Modal confirmação delete múltiplo */}
+      {showDeleteConfirm&&(
+        <div className="mbk">
+          <div className="confirm-modal">
+            <div style={{marginBottom:16}}>
+              <div style={{fontWeight:700,fontSize:15,color:"#0F172A",marginBottom:6}}>Excluir {selectedRows.size} registro{selectedRows.size!==1?"s":""}?</div>
+              <div style={{fontSize:13,color:"#64748B",lineHeight:1.5}}>Esta ação é permanente e não pode ser desfeita. Os registros selecionados serão removidos do banco de dados.</div>
+            </div>
+            <div style={{display:"flex",gap:8,justifyContent:"flex-end"}}>
+              <button className="btn btn-g" onClick={()=>setShowDeleteConfirm(false)} disabled={saving}>Cancelar</button>
+              <button className="btn btn-sm" style={{background:"#DC2626",color:"#fff",border:"none",padding:"6px 16px",fontSize:12}}
+                disabled={saving} onClick={handleDeleteSelected}>
+                {saving?"Excluindo…":"Confirmar exclusão"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+      {showKanbanImport&&<KanbanImportModal onClose={()=>setShowKanbanImport(false)} onImport={handleImport}/>}
+      {showPaste&&<PasteModal onClose={()=>setShowPaste(false)} onImport={handleImportPaste}/>}
+      {importErrors&&<ImportResultModal data={importErrors} onClose={()=>setImportErrors(null)}/>}
+      {exportResult&&<ExportResultModal data={exportResult} onClose={()=>setExportResult(null)}/>}
+      {showDuplicates&&<DuplicatesModal rows={rows} onClose={()=>setShowDuplicates(false)} onDelete={async(id)=>{await handleDelete(id);}}/>}
+      {modal!==null&&<FormModal row={modal} onClose={()=>setModal(null)} onSave={handleSave} saving={saving}/>}
+      <div className="tst">
+        {ts.map(t=><div key={t.id} className={`toast ${t.type}`}><span>{t.type==="ok"?"✓":"✕"}</span><span>{t.msg}</span></div>)}
+      </div>
+    </div>
+  );
+}
+// So monta o app depois de aplicar a sessao — evita a primeira rajada de
+// requisicoes sair anonima e voltar vazia, o que pareceria "banco sem dados".
+aplicarSessao().then(sess=>{
+  if(sess) ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
+});
+
+</script>
+</body>
+</html>

@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<title>Atualizar o painel — Regulação SCFM</title>
+<style>
+  :root{
+    --bg:#f2f5f7;
+    --surface:#ffffff;
+    --surface-sunk:#f7f9fa;
+    --ink:#12212b;
+    --ink-soft:#5a6b77;
+    --line:#dde5ea;
+    --accent:#0e7490;
+    --accent-ink:#075c74;
+    --ok:#0f7b53;
+    --warn:#a3591a;
+    --err:#b4322b;
+    --r-sm:8px; --r-md:10px; --r-lg:16px;
+  }
+  @media (prefers-color-scheme: dark){
+    :root{
+      --bg:#0d1519;
+      --surface:#141f25;
+      --surface-sunk:#1b272e;
+      --ink:#e8eef1;
+      --ink-soft:#93a5af;
+      --line:#27363e;
+      --accent:#2aa6c4;
+      --accent-ink:#4fc3dd;
+      --ok:#4ac490;
+      --warn:#d9a05b;
+      --err:#e8796f;
+    }
+  }
+  *{box-sizing:border-box}
+  html,body{height:100%}
+  body{
+    margin:0;
+    background:var(--bg);
+    color:var(--ink);
+    font-family:Inter,system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+    font-size:16px;
+    line-height:1.55;
+    -webkit-font-smoothing:antialiased;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    padding:24px;
+  }
+  .card{
+    width:100%;
+    max-width:520px;
+    background:var(--surface);
+    border:1px solid var(--line);
+    border-radius:var(--r-lg);
+    padding:32px;
+    box-shadow:0 1px 2px rgba(18,33,43,.04), 0 8px 24px -16px rgba(18,33,43,.25);
+  }
+  @media (max-width:520px){ .card{padding:24px} body{padding:16px} }
+
+  .mark{
+    display:flex; align-items:center; gap:10px;
+    color:var(--ink-soft); font-size:13px; font-weight:500;
+    margin-bottom:24px;
+  }
+  .mark span{width:6px;height:6px;border-radius:999px;background:var(--accent)}
+
+  h1{font-size:26px;line-height:1.25;font-weight:650;letter-spacing:-.015em;margin:0 0 10px}
+  .lead{margin:0;color:var(--ink-soft);font-size:15px}
+
+  .opt{
+    margin:24px 0;
+    background:var(--surface-sunk);
+    border:1px solid var(--line);
+    border-radius:var(--r-md);
+    padding:14px 16px;
+    display:flex; gap:12px; align-items:flex-start;
+    cursor:pointer;
+  }
+  .opt input{
+    width:18px;height:18px;margin:2px 0 0;accent-color:var(--accent);flex:none;cursor:pointer;
+  }
+  .opt b{display:block;font-size:14px;font-weight:600}
+  .opt small{display:block;color:var(--ink-soft);font-size:13px;margin-top:2px}
+
+  button{
+    font:inherit; cursor:pointer; border-radius:var(--r-md);
+    transition:background .16s ease, border-color .16s ease, color .16s ease, opacity .16s ease;
+  }
+  button:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+  .primary{
+    width:100%; height:48px; border:0;
+    background:var(--accent); color:#fff; font-size:15px; font-weight:600;
+    display:flex; align-items:center; justify-content:center; gap:10px;
+  }
+  .primary:hover:not(:disabled){background:var(--accent-ink)}
+  .primary:active:not(:disabled){transform:translateY(1px)}
+  .primary:disabled{opacity:.6;cursor:default}
+  .ghost{
+    width:100%; height:42px; margin-top:10px;
+    background:transparent; border:1px solid var(--line); color:var(--ink-soft);
+    font-size:14px; font-weight:500;
+  }
+  .ghost:hover{border-color:var(--ink-soft);color:var(--ink)}
+
+  .spinner{
+    width:16px;height:16px;border-radius:999px;flex:none;
+    border:2px solid rgba(255,255,255,.35); border-top-color:#fff;
+    animation:spin .7s linear infinite;
+  }
+  @keyframes spin{to{transform:rotate(360deg)}}
+
+  .steps{list-style:none;margin:24px 0 0;padding:0;display:grid;gap:2px}
+  .steps li{
+    display:flex; align-items:center; gap:10px;
+    font-size:14px; color:var(--ink-soft);
+    padding:9px 12px; border-radius:var(--r-sm);
+  }
+  .steps li[data-s="run"]{background:var(--surface-sunk);color:var(--ink)}
+  .steps li[data-s="done"]{color:var(--ink)}
+  .steps li[data-s="fail"]{color:var(--err)}
+  .dot{width:16px;height:16px;flex:none;display:grid;place-items:center;font-size:12px;font-weight:700}
+  .dot::before{content:"";width:6px;height:6px;border-radius:999px;background:var(--line)}
+  li[data-s="run"] .dot::before{background:var(--accent);animation:pulse 1s ease-in-out infinite}
+  li[data-s="done"] .dot::before{content:"✓";width:auto;height:auto;background:none;color:var(--ok);font-size:13px}
+  li[data-s="fail"] .dot::before{content:"!";width:auto;height:auto;background:none;color:var(--err)}
+  @keyframes pulse{50%{opacity:.35}}
+  .steps .count{margin-left:auto;font-size:12px;color:var(--ink-soft);font-variant-numeric:tabular-nums}
+
+  .result{margin-top:24px;border-radius:var(--r-md);padding:16px;font-size:14px;display:none}
+  .result b{display:block;font-size:15px;margin-bottom:4px}
+  .result.ok{display:block;background:color-mix(in srgb,var(--ok) 10%,transparent);color:var(--ok)}
+  .result.err{display:block;background:color-mix(in srgb,var(--err) 10%,transparent);color:var(--err)}
+  .result.ok b,.result.err b{color:inherit}
+
+  .hint{margin-top:20px;padding-top:20px;border-top:1px solid var(--line);font-size:13px;color:var(--ink-soft)}
+  @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
+</head>
+<body>
+<main class="card">
+  <div class="mark"><span></span>Regulação SCFM</div>
+
+  <h1>Atualizar o painel</h1>
+  <p class="lead">Se o painel abriu com uma versão antiga ou travou depois de uma atualização, limpe os arquivos guardados no navegador e recarregue. Leva alguns segundos.</p>
+
+  <label class="opt" for="wipe">
+    <input type="checkbox" id="wipe">
+    <span>
+      <b>Limpar também os dados salvos neste navegador</b>
+      <small>Filtros, preferências e sessão. Você vai precisar entrar de novo. Nenhum dado do servidor é apagado.</small>
+    </span>
+  </label>
+
+  <button class="primary" id="go">Limpar e recarregar</button>
+  <button class="ghost" id="back">Voltar ao painel sem limpar</button>
+
+  <ul class="steps" id="steps" hidden>
+    <li data-k="sw"><span class="dot"></span>Removendo o service worker<span class="count"></span></li>
+    <li data-k="cache"><span class="dot"></span>Apagando arquivos em cache<span class="count"></span></li>
+    <li data-k="idb"><span class="dot"></span>Limpando o banco local<span class="count"></span></li>
+    <li data-k="storage"><span class="dot"></span>Limpando dados salvos<span class="count"></span></li>
+  </ul>
+
+  <div class="result" id="result"></div>
+
+  <p class="hint">Se o problema continuar depois disso, feche todas as abas do painel e abra novamente. Só então acione o suporte.</p>
+</main>
+
+<script>
+(function () {
+  var APP = 'index.html';
+  var steps = document.getElementById('steps');
+  var result = document.getElementById('result');
+  var go = document.getElementById('go');
+  var back = document.getElementById('back');
+  var wipe = document.getElementById('wipe');
+  var failed = [];
+
+  function li(k){ return steps.querySelector('li[data-k="'+k+'"]'); }
+  function set(k, state, count){
+    var el = li(k); if (!el) return;
+    el.dataset.s = state;
+    if (count !== undefined) el.querySelector('.count').textContent = count;
+  }
+  function skip(k){ var el = li(k); if (el) el.hidden = true; }
+
+  async function unregisterSW(){
+    if (!('serviceWorker' in navigator)) return 'não usado';
+    var regs = await navigator.serviceWorker.getRegistrations();
+    for (var i = 0; i < regs.length; i++) await regs[i].unregister();
+    return regs.length ? regs.length + (regs.length > 1 ? ' removidos' : ' removido') : 'nenhum';
+  }
+
+  async function clearCaches(){
+    if (!('caches' in window)) return 'não usado';
+    var keys = await caches.keys();
+    for (var i = 0; i < keys.length; i++) await caches.delete(keys[i]);
+    return keys.length ? keys.length + (keys.length > 1 ? ' apagados' : ' apagado') : 'nenhum';
+  }
+
+  async function clearIDB(){
+    if (!window.indexedDB) return 'não usado';
+    if (typeof indexedDB.databases !== 'function') return 'não listável';
+    var dbs = await indexedDB.databases();
+    var n = 0;
+    for (var i = 0; i < dbs.length; i++) {
+      var name = dbs[i] && dbs[i].name;
+      if (!name) continue;
+      await new Promise(function (res) {
+        var req = indexedDB.deleteDatabase(name);
+        req.onsuccess = req.onerror = req.onblocked = function () { res(); };
+        setTimeout(res, 1500);
+      });
+      n++;
+    }
+    return n ? n + (n > 1 ? ' apagados' : ' apagado') : 'nenhum';
+  }
+
+  async function clearStorage(){
+    localStorage.clear();
+    sessionStorage.clear();
+    return 'concluído';
+  }
+
+  async function run(key, fn){
+    set(key, 'run');
+    try {
+      var msg = await fn();
+      set(key, 'done', msg);
+    } catch (e) {
+      failed.push(key);
+      set(key, 'fail', 'falhou');
+      console.error('[reset] ' + key, e);
+    }
+  }
+
+  go.addEventListener('click', async function () {
+    go.disabled = true;
+    back.disabled = true;
+    wipe.disabled = true;
+    go.innerHTML = '<span class="spinner"></span>Limpando';
+    steps.hidden = false;
+    if (!wipe.checked) skip('storage');
+
+    await run('sw', unregisterSW);
+    await run('cache', clearCaches);
+    await run('idb', clearIDB);
+    if (wipe.checked) await run('storage', clearStorage);
+
+    var url = APP + '?atualizado=' + Date.now();
+
+    if (failed.length) {
+      result.className = 'result err';
+      result.innerHTML = '<b>Limpeza parcial</b>Parte dos dados não pôde ser apagada por este navegador. Recarregue o painel e, se a versão antiga voltar, avise o suporte informando o horário.';
+      go.disabled = false;
+      go.textContent = 'Abrir o painel mesmo assim';
+      go.onclick = function () { location.replace(url); };
+      return;
+    }
+
+    result.className = 'result ok';
+    result.innerHTML = '<b>Pronto</b>Abrindo a versão mais recente do painel.';
+    go.innerHTML = '<span class="spinner"></span>Abrindo';
+    setTimeout(function () { location.replace(url); }, 900);
+  });
+
+  back.addEventListener('click', function () { location.replace(APP); });
+})();
+</script>
+</body>
+</html>
