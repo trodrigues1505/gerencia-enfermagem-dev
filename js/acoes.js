@@ -82,6 +82,14 @@ function AcoesEnfermagem({ currentUser, userId, onClose }) {
     try{ await callFn({action:"concluir",id:a.id}); showT("Concluída!"); load(); }
     catch(ex){ showT(ex.message,"err"); }
   }
+  async function handleIniciar(a){
+    try{ await callFn({action:"iniciar",id:a.id}); showT("Iniciada!"); load(); }
+    catch(ex){ showT(ex.message,"err"); }
+  }
+  async function handlePausar(a){
+    try{ await callFn({action:"pausar",id:a.id}); showT("Pausada."); load(); }
+    catch(ex){ showT(ex.message,"err"); }
+  }
   async function handleReabrir(a){
     try{ await callFn({action:"reabrir",id:a.id}); showT("Reaberta."); load(); }
     catch(ex){ showT(ex.message,"err"); }
@@ -104,7 +112,7 @@ function AcoesEnfermagem({ currentUser, userId, onClose }) {
     setEditing(a); setConflito(null); setAba("nova"); setFormV(function(v){return v+1;});
   }
 
-  var pendentes  = Array.isArray(acoes)?acoes.filter(function(a){return a.status==="pendente";}):[];
+  var pendentes  = Array.isArray(acoes)?acoes.filter(function(a){return a.status==="pendente"||a.status==="iniciada"||a.status==="pausada";}):[];
   var concluidas = Array.isArray(acoes)?acoes.filter(function(a){return a.status==="concluida";}):[];
 
   /* Agrupar pendentes por responsável */
@@ -131,28 +139,44 @@ function AcoesEnfermagem({ currentUser, userId, onClose }) {
 
   function CardAcao(props){
     var a=props.acao;
-    var vencida=a.prazo&&new Date(a.prazo)<new Date();
+    var vencida=a.prazo&&new Date(a.prazo)<new Date()&&a.status!=="concluida";
     var meu=currentUser&&a.responsavel_id===currentUser.id;
     var podeConcluir=isAdmin||podeGerir||meu;
-    return React.createElement("div",{style:{background:"#fff",border:"1px solid "+(vencida?"#FCA5A5":"#E2E8F0"),borderLeft:"3px solid "+(a.prioridade?"#7C3AED":"#CBD5E1"),borderRadius:10,padding:"11px 13px",marginBottom:7}},
+    var statusInfo={
+      pendente:{cor:"#CBD5E1",label:"Pendente"},
+      iniciada:{cor:"#3B82F6",label:"▶ Em andamento"},
+      pausada:{cor:"#F59E0B",label:"⏸ Pausada"},
+      concluida:{cor:"#22C55E",label:"✓ Concluída"}
+    }[a.status||"pendente"]||{cor:"#CBD5E1",label:"Pendente"};
+    var tempoLabel=a.tempo_min>0?(a.tempo_min>=60?Math.floor(a.tempo_min/60)+"h"+String(a.tempo_min%60).padStart(2,"0")+"min":a.tempo_min+"min"):null;
+    return React.createElement("div",{style:{background:"#fff",border:"1px solid "+(vencida?"#FCA5A5":"#E2E8F0"),borderLeft:"3px solid "+statusInfo.cor,borderRadius:10,padding:"11px 13px",marginBottom:7}},
       React.createElement("div",{style:{display:"flex",justifyContent:"space-between",alignItems:"flex-start",gap:8}},
         React.createElement("div",{style:{flex:1,minWidth:0}},
-          React.createElement("div",{style:{display:"flex",alignItems:"center",gap:6,marginBottom:2}},
+          React.createElement("div",{style:{display:"flex",alignItems:"center",gap:6,marginBottom:2,flexWrap:"wrap"}},
             a.prioridade&&React.createElement("span",{style:{fontSize:9,fontWeight:800,padding:"2px 7px",borderRadius:99,background:"#EDE9FE",color:"#6D28D9",border:"1px solid #DDD6FE",flexShrink:0}},"P"+a.prioridade),
-            React.createElement("span",{style:{fontWeight:700,fontSize:13,color:"#0F172A"}},a.titulo)
+            React.createElement("span",{style:{fontWeight:700,fontSize:13,color:"#0F172A"}},a.titulo),
+            React.createElement("span",{style:{fontSize:9,fontWeight:600,padding:"2px 7px",borderRadius:99,background:statusInfo.cor+"22",color:statusInfo.cor,border:"1px solid "+statusInfo.cor+"44",flexShrink:0}},statusInfo.label)
           ),
           a.descricao&&React.createElement("div",{style:{fontSize:11,color:"#64748B",marginBottom:3}},a.descricao),
           React.createElement("div",{style:{display:"flex",gap:8,flexWrap:"wrap",fontSize:10,color:"#94A3B8"}},
             a.prazo&&React.createElement("span",{style:{color:vencida?"#EF4444":"#94A3B8",fontWeight:vencida?700:400}},
-              (vencida?"\u26A0\uFE0F Venceu: ":"\uD83D\uDD50 Prazo: ")+new Date(a.prazo).toLocaleString("pt-BR",{day:"2-digit",month:"2-digit",hour:"2-digit",minute:"2-digit"})
+              (vencida?"⚠️ Venceu: ":"🕐 Prazo: ")+new Date(a.prazo).toLocaleString("pt-BR",{day:"2-digit",month:"2-digit",hour:"2-digit",minute:"2-digit"})
             ),
+            tempoLabel&&React.createElement("span",{style:{color:"#3B82F6",fontWeight:600}},"⏱ "+tempoLabel),
             React.createElement("span",null,"Criada: "+new Date(a.created_at).toLocaleString("pt-BR",{day:"2-digit",month:"2-digit",hour:"2-digit",minute:"2-digit"}))
           )
         ),
-        React.createElement("div",{style:{display:"flex",gap:5,flexShrink:0}},
-          podeConcluir&&React.createElement("button",{onClick:function(){handleConcluir(a);},style:{padding:"5px 10px",border:"none",borderRadius:6,background:"#16A34A",color:"#fff",fontWeight:700,fontSize:11,cursor:"pointer"}},"\u2713 Concluir"),
-          podeGerir&&React.createElement("button",{onClick:function(){startEdit(a);},style:{padding:"5px 8px",border:"1px solid #E2E8F0",borderRadius:6,background:"none",color:"#374151",cursor:"pointer",fontSize:11}},"\u270F\uFE0F"),
-          podeGerir&&React.createElement("button",{onClick:function(){handleDelete(a);},style:{padding:"5px 8px",border:"1px solid #E2E8F0",borderRadius:6,background:"none",color:"#94A3B8",cursor:"pointer",fontSize:11}},"\u2715")
+        React.createElement("div",{style:{display:"flex",flexDirection:"column",gap:4,flexShrink:0,alignItems:"flex-end"}},
+          React.createElement("div",{style:{display:"flex",gap:4}},
+            (a.status==="pendente"||a.status==="pausada")&&(podeConcluir)&&React.createElement("button",{onClick:function(){handleIniciar(a);},style:{padding:"5px 9px",border:"none",borderRadius:6,background:"#3B82F6",color:"#fff",fontWeight:700,fontSize:11,cursor:"pointer"}},"▶ Iniciar"),
+            a.status==="iniciada"&&(podeConcluir)&&React.createElement("button",{onClick:function(){handlePausar(a);},style:{padding:"5px 9px",border:"none",borderRadius:6,background:"#F59E0B",color:"#fff",fontWeight:700,fontSize:11,cursor:"pointer"}},"⏸ Pausar"),
+            (a.status==="iniciada"||a.status==="pausada")&&(podeConcluir)&&React.createElement("button",{onClick:function(){handleConcluir(a);},style:{padding:"5px 9px",border:"none",borderRadius:6,background:"#16A34A",color:"#fff",fontWeight:700,fontSize:11,cursor:"pointer"}},"✓ Concluir"),
+            a.status==="pendente"&&(podeConcluir)&&React.createElement("button",{onClick:function(){handleConcluir(a);},style:{padding:"5px 9px",border:"none",borderRadius:6,background:"#16A34A",color:"#fff",fontWeight:700,fontSize:11,cursor:"pointer"}},"✓ Concluir")
+          ),
+          React.createElement("div",{style:{display:"flex",gap:4}},
+            podeGerir&&React.createElement("button",{onClick:function(){startEdit(a);},style:{padding:"5px 8px",border:"1px solid #E2E8F0",borderRadius:6,background:"none",color:"#374151",cursor:"pointer",fontSize:11}},"✏️"),
+            podeGerir&&React.createElement("button",{onClick:function(){handleDelete(a);},style:{padding:"5px 8px",border:"1px solid #E2E8F0",borderRadius:6,background:"none",color:"#94A3B8",cursor:"pointer",fontSize:11}},"✕")
+          )
         )
       )
     );
