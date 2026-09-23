@@ -684,10 +684,31 @@ function CardModal({
             )
           ),
           canEdit && React.createElement("button", {
-            onClick: () => { upd("prioridade_remocao", ""); upd("hora_prioridade", ""); },
+            onClick: () => { upd("prioridade_remocao", ""); upd("hora_prioridade", ""); upd("justificativa_prioridade", ""); },
             style: { marginTop: 8, padding: "3px 10px", border: "1px solid #E2E8F0", borderRadius: 6,
               background: "none", color: "#94A3B8", fontSize: 11, cursor: "pointer" }
-          }, "✕ Limpar prioridade")
+          }, "✕ Limpar prioridade"),
+          form.prioridade_remocao && React.createElement("div", { style: { marginTop: 10 } },
+            React.createElement("div", { style: { fontSize: 10, fontWeight: 700, color: "#7C3AED", textTransform: "uppercase", letterSpacing: ".05em", marginBottom: 4 } },
+              "Justificativa clínica ", React.createElement("span", { style: { color: "#EF4444" } }, "*")
+            ),
+            React.createElement("textarea", {
+              rows: 2,
+              disabled: !canEdit,
+              value: form.justificativa_prioridade || "",
+              onChange: e => upd("justificativa_prioridade", e.target.value),
+              placeholder: "Ex: Paciente com risco de deterioração — prioridade justificada pelo Dr. Silva",
+              style: {
+                width: "100%", padding: "8px 10px", fontFamily: "inherit", fontSize: 12, resize: "vertical",
+                outline: "none", borderRadius: 8, boxSizing: "border-box",
+                border: (!form.justificativa_prioridade && canEdit) ? "1.5px solid #FCA5A5" : "1.5px solid #DDD6FE",
+                background: canEdit ? "#FEFBFF" : "#F8FAFC", color: "#0F172A"
+              }
+            }),
+            !form.justificativa_prioridade && canEdit && React.createElement("div", {
+              style: { fontSize: 10, color: "#EF4444", marginTop: 2, fontWeight: 600 }
+            }, "Obrigatória para salvar com prioridade definida.")
+          )
         ),
         /* Hora capturada automaticamente ao salvar */
         form.hora_prioridade && React.createElement("div", {
