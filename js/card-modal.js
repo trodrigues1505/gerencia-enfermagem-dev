@@ -250,6 +250,11 @@ function CardModal({
       onClick: () => {
         // Captura automática de horários no momento do Salvar
         const formFinal = { ...form };
+        // Validar justificativa obrigatória para prioridade
+        if (formFinal.prioridade_remocao && !formFinal.justificativa_prioridade?.trim()) {
+          alert("Justificativa obrigatória ao definir prioridade.");
+          return;
+        }
         // Hora da prioridade: captura se Victor definiu prioridade mas hora ainda não foi registrada
         if (formFinal.prioridade_remocao && !formFinal.hora_prioridade) {
           formFinal.hora_prioridade = nowStr();
