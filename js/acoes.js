@@ -185,7 +185,7 @@ function AcoesEnfermagem({ currentUser, userId, onClose }) {
       /* Abas */
       React.createElement("div",{style:{display:"flex",borderBottom:"1px solid #F1F5F9",flexShrink:0,overflowX:"auto"}},
         ABA_S("pendentes","Pendentes",pendentes.length),
-        ABA_S("concluidas","Concluid\xEAs",concluidas.length),
+        ABA_S("concluidas","Conclu\xEDdas",concluidas.length),
         podeGerir&&ABA_S("nova",editing?"Editar tarefa":"Nova tarefa",null)
       ),
 
