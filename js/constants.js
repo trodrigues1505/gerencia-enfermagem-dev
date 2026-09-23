@@ -19,3 +19,8 @@ const STATUS_EMOJI = {
 };
 
 const PR_EMOJI = { "01":"[P1]", "02":"[P2]", "03":"[P3]", "04":"[P4]" };
+
+/* ─── IDs dos usuários com funções especiais ─── */
+const AUTH_UID_VICTOR  = "43b06664-2357-4e82-a1cf-218232e43603";
+const AUTH_UID_CARLOS  = "9514cb90-88d5-4f34-a638-5de3a44772e8";
+const AUTH_UID_SANTUZA = "164f7435-79f6-4aad-aae4-4eee27fad72c";
