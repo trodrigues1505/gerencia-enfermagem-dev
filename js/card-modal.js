@@ -159,11 +159,13 @@ function parseTSVToCard(txt){
   if(obs)          raw.obs          = obs;
   if(categoria)    raw.categoria    = categoria;
 
-  if(Object.keys(raw).length === 0) return null;
+  // Só retorna objeto se tiver ficha ou nome — evita falsos positivos
+  // com trechos de cabeçalho que só teriam { grav: "urgencia" } como fallback
+  if(!raw.ficha_cross && !raw.nome) return null;
 
-  // Aviso se não achou campos essenciais
-  if(!raw.nome && !raw.ficha_cross && !raw.hd){
-    raw._aviso = "⚠ Não foi possível identificar nome, ficha ou diagnóstico. Verifique se o texto colado é de uma ficha CROSS completa.";
+  // Aviso se não achou campos essenciais além de ficha/nome
+  if(!raw.hd && !raw.adm){
+    raw._aviso = "⚠ Poucos campos reconhecidos. Verifique se o texto colado é de uma ficha CROSS completa.";
   }
 
   return raw;
