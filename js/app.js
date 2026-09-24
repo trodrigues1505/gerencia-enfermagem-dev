@@ -55,6 +55,8 @@ function App() {
   const [showLivro, setShowLivro] = useState(false);
   const [pendentesCount, setPendentesCount] = useState(0);
   const [pendenciasCount, setPendenciasCount] = useState(0);
+  const [acoesCount, setAcoesCount] = useState(0);
+  const [bannerOpen, setBannerOpen] = useState(false);
   const [showAcoes, setShowAcoes] = useState(false);
   const dragId = useRef(null);
   const dragOverCol = useRef(null);
@@ -78,7 +80,7 @@ function App() {
     async function fetchPendentes() {
       try {
         const rows = await sbGet("acoes_enfermagem", "status=in.(pendente,iniciada,pausada)&select=id");
-        if (vivo) setPendenciasCount(Array.isArray(rows) ? rows.length : 0);
+        if (vivo) setAcoesCount(Array.isArray(rows) ? rows.length : 0);
       } catch(e) {}
     }
     fetchPendentes();
@@ -1186,9 +1188,18 @@ function App() {
     ),
     /* Banner edição / visualização */
     isAdmin && /*#__PURE__*/React.createElement("div", {
-      style: { background: "#FFFBEB", borderBottom: "1px solid #FDE68A", padding: "5px 20px", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8, flexWrap: "wrap" }
+      style: { background: "#FFFBEB", borderBottom: "1px solid #FDE68A" }
     },
-      /*#__PURE__*/React.createElement("span", { style: { fontSize: 11, color: "#92400E", fontWeight: 500 } }, "✎ Modo de edição — alterações não ficam visíveis até publicar", lastPub ? ` · Última publicação: ${lastPub}` : ""),
+      /* Linha de título clicável no mobile */
+      /*#__PURE__*/React.createElement("div", {
+        onClick: () => setBannerOpen(o => !o),
+        style: { padding: "5px 20px", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8, cursor: "pointer" }
+      },
+        /*#__PURE__*/React.createElement("span", { style: { fontSize: 11, color: "#92400E", fontWeight: 500 } }, "✎ Modo de edição", lastPub ? ` · ${lastPub}` : ""),
+        /*#__PURE__*/React.createElement("span", { style: { fontSize: 11, color: "#92400E", transition: "transform .2s", display: "inline-block", transform: bannerOpen ? "rotate(180deg)" : "rotate(0deg)" } }, "▾")
+      ),
+      /* Conteúdo expandível */
+      bannerOpen && /*#__PURE__*/React.createElement("div", { style: { padding: "0 20px 8px", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8, flexWrap: "wrap" } },
       /*#__PURE__*/React.createElement("div", { style: { display: "flex", gap: 6, alignItems: "center" } },
         /*#__PURE__*/React.createElement("div", { style: { display: "flex", gap: 6 } },
           /*#__PURE__*/React.createElement("button", { onClick: saveSnapshot, style: { padding: "3px 10px", border: "1px solid #FDE68A", borderRadius: 5, background: "none", color: "#92400E", cursor: "pointer", fontSize: 11, fontWeight: 600 } }, "💾 Salvar"),
@@ -1197,6 +1208,7 @@ function App() {
           /*#__PURE__*/React.createElement("button", { onClick: onDelAll, title: "Excluir todos os cards do Kanban", style: { padding: "3px 10px", border: "1px solid #FCA5A5", borderRadius: 5, background: "none", color: "#B91C1C", cursor: "pointer", fontSize: 11, fontWeight: 600 } }, "🗑 Limpar todos os cards")
         ),
         /*#__PURE__*/React.createElement("span", { style: { fontSize: 10, color: "#92400E" } }, "Atalhos: ", /*#__PURE__*/React.createElement("kbd", { style: { background: "#FDE68A", padding: "1px 4px", borderRadius: 3, fontFamily: "monospace" } }, "N"), " novo paciente\u00A0", /*#__PURE__*/React.createElement("kbd", { style: { background: "#FDE68A", padding: "1px 4px", borderRadius: 3, fontFamily: "monospace" } }, "P"), " publicar\u00A0", /*#__PURE__*/React.createElement("kbd", { style: { background: "#FDE68A", padding: "1px 4px", borderRadius: 3, fontFamily: "monospace" } }, "Esc"), " fechar")
+      )
       )
     ),
     !isAdmin && /*#__PURE__*/React.createElement("div", {
@@ -1214,7 +1226,7 @@ function App() {
     /* Conteúdo principal */
     /*#__PURE__*/React.createElement("div", { style: { maxWidth: 1600, margin: "0 auto", padding: "16px 20px" } },
       /* Barra de navegação e filtros */
-      /*#__PURE__*/React.createElement("div", { className: "ge-nav-bar", style: { display: "flex", gap: 8, marginBottom: 14, alignItems: "center", flexWrap: "nowrap", paddingBottom: 4 } },
+      /*#__PURE__*/React.createElement("div", { className: "ge-nav-bar", style: { display: "flex", gap: 8, marginBottom: 14, alignItems: "center", flexWrap: "nowrap", paddingBottom: 4, overflowX: "auto", WebkitOverflowScrolling: "touch" } },
         /*#__PURE__*/React.createElement("div", { className: "ge-nav-inner", style: { background: "#fff", border: "1px solid #E2E8F0", borderRadius: 8, padding: "2px", display: "flex", gap: 1, flexShrink: 0 } },
           /*#__PURE__*/React.createElement(NavBtn, { id: "dashboard", label: "📊 Dashboard" }),
           /*#__PURE__*/React.createElement(KanbanDropdown, { view: view, setView: setView }),
@@ -1533,7 +1545,7 @@ function App() {
     isAdmin && React.createElement(FloatingActions, {
       cards: cards,
       discrepancias: discrepancias,
-      pendencias: pendenciasCount,
+      pendencias: acoesCount,
       setView: setView
     }),
     /*#__PURE__*/React.createElement(Toast, { toast: toast })
