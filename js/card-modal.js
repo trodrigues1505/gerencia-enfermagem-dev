@@ -922,17 +922,7 @@ function CardModal({
       fontSize: 10,
       padding: "0 2px"
     }
-  }, "↩"), !c.is_system && (currentUser?.role === "admin" || c.autor_id === currentUser?.id) && /*#__PURE__*/React.createElement("button", {
-    onClick: () => onDelComment(c.id, card.id),
-    style: {
-      background: "none",
-      border: "none",
-      cursor: "pointer",
-      color: "#CBD5E1",
-      fontSize: 12,
-      padding: 0
-    }
-  }, "✕"))), /*#__PURE__*/React.createElement("div", {
+  }, "↩"))), /*#__PURE__*/React.createElement("div", {
     style: {
       fontSize: 13,
       color: "#374151",
