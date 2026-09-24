@@ -923,7 +923,7 @@ function CardModal({
       padding: "0 2px"
     }
   }, "↩"), !c.is_system && (currentUser?.role === "admin" || c.autor_id === currentUser?.id) && /*#__PURE__*/React.createElement("button", {
-    onClick: () => onDelComment(c.id),
+    onClick: () => onDelComment(c.id, card.id),
     style: {
       background: "none",
       border: "none",
