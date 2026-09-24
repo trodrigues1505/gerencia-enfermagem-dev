@@ -30,10 +30,10 @@ kbd{font-family:monospace;background:#F1F5F9;padding:1px 5px;border-radius:3px;b
 .tip .tipbox{text-transform:none!important;letter-spacing:0!important}
 /* ── Floating actions ── */
 #ge-fab{position:fixed;bottom:20px;right:16px;z-index:8000;display:flex;flex-direction:column;align-items:flex-end;gap:6px}
-@media(max-width:640px){#ge-fab{bottom:96px;right:12px}}
+@media(max-width:640px){#ge-fab{bottom:calc(96px + env(safe-area-inset-bottom,0px));right:max(12px,env(safe-area-inset-right,12px))}}
 /* ── Mobile: nav barra ── */
 @media(max-width:640px){
-  .ge-nav-bar{overflow-x:auto!important;flex-wrap:nowrap!important;-webkit-overflow-scrolling:touch;scrollbar-width:none;gap:4px!important;margin-bottom:8px!important}
+  .ge-nav-bar{overflow-x:auto!important;overflow-y:visible!important;flex-wrap:nowrap!important;-webkit-overflow-scrolling:touch;scrollbar-width:none;gap:4px!important;margin-bottom:8px!important}
   .ge-nav-bar::-webkit-scrollbar{display:none}
   .ge-nav-inner{flex-shrink:0}
   /* Modais */
@@ -141,4 +141,3 @@ kbd{font-family:monospace;background:#F1F5F9;padding:1px 5px;border-radius:3px;b
     #ge-update .ge-acts{flex-direction:row-reverse; justify-content:flex-start; width:100%}
   }
   @media (prefers-reduced-motion:reduce){ #ge-version,#ge-update{transition:none} #ge-version .ge-pip{animation:none} }
-
