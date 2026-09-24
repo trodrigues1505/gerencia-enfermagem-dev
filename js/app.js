@@ -429,9 +429,21 @@ function App() {
   async function onSave(form) {
     try {
       const action = form.id === "new" ? "create" : "update";
+      // Verificar se justificativa de prioridade mudou para inserir comentário de sistema
+      const cardAnterior = cards.find(c => c.id === form.id);
+      const justifMudou = form.justificativa_prioridade?.trim() &&
+        form.justificativa_prioridade !== cardAnterior?.justificativa_prioridade;
       const data = await fn("cards-write", { action, id: form.id, body: form }, userId);
       if (action === "create") setCards(p => { const next = [...p, data]; window.__geCards = next; return next; });
       else setCards(p => { const next = p.map(c => c.id === form.id ? data : c); window.__geCards = next; return next; });
+      // Inserir comentário de sistema com a justificativa
+      if (justifMudou && data.id) {
+        const textoJustif = "📌 Justificativa da prioridade (P" + form.prioridade_remocao + "): " + form.justificativa_prioridade.trim();
+        try {
+          const comentario = await fn("comments-write", { action: "create", card_id: data.id, texto: textoJustif, is_system: true }, userId);
+          setComments(p => ({ ...p, [data.id]: [...(p[data.id] || []), comentario] }));
+        } catch(e) { console.warn("Erro ao registrar justificativa como comentário:", e); }
+      }
       showT("Salvo.");
     } catch (ex) {
       showT(ex.message, "err");
