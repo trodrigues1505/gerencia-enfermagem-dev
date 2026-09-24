@@ -97,8 +97,10 @@ function parseTSVToCard(txt){
   const hd = cid1 ? cid1.toUpperCase() : cid2 ? cid2.toUpperCase() : "";
 
   // ── Médico SOLICITANTE (não confundir com Médico Receptor) ───────────────
-  // Regra: buscar "Médico Solicitante" ou "Solicitante", nunca "Médico Receptor"
-  const mMed = txt.match(/(?:M[eé]dico\s*Solicitante|Solicitante)\s*[:\-]?\s*[\r\n\t]*([^\r\n\t]+)/i);
+  // Estrutura real das fichas: rótulo e valor em linhas separadas.
+  // Após o nome pode vir tab (ou espaços) seguido de "CRM" — paramos aí.
+  // Regex: captura tudo após a quebra de linha até encontrar tab, "CRM" ou fim de linha.
+  const mMed = txt.match(/M[eé]dico\s+Solicitante\s*[:\-]?\s*[\r\n]+\s*([^\r\n\t]+?)(?:\s{2,}|\t|\s*CRM|[\r\n]|$)/i);
   const medico_solic = mMed ? mMed[1].trim() : "";
 
   // ── Status ───────────────────────────────────────────────────────────────
