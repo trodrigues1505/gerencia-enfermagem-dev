@@ -336,115 +336,55 @@ function UsersPanel({
       background: "#EFF6FF",
       color: "#1E40AF"
     }
-  }, "Admin")), !loading && users.filter(u => u.coren !== "299283").map(u => /*#__PURE__*/React.createElement("div", {
+  }, "Admin")), !loading && users.filter(u => u.coren !== "299283").map(u =>
+  React.createElement("div", {
     key: u.id,
     className: "ge-user-card",
-    style: {
-      background: "#fff",
-      border: "1px solid #E2E8F0",
-      borderRadius: 10,
-      padding: "12px 16px",
-      marginBottom: 8,
-      display: "flex",
-      flexDirection: "column",
-      gap: 10
-    }
-  }, /*#__PURE__*/React.createElement("div", {
-    style: {
-      width: 40,
-      height: 40,
-      borderRadius: "50%",
-      background: "#F1F5F9",
-      overflow: "hidden",
-      flexShrink: 0,
-      border: "1px solid #E2E8F0",
-      display: "flex",
-      alignItems: "center",
-      justifyContent: "center"
-    }
-  }, u.foto ? /*#__PURE__*/React.createElement("img", {
-    src: u.foto,
-    style: {
-      width: "100%",
-      height: "100%",
-      objectFit: "cover"
-    }
-  }) : /*#__PURE__*/React.createElement("span", {
-    style: {
-      fontSize: 16,
-      color: "#CBD5E1"
-    }
-  }, "👤")), /*#__PURE__*/React.createElement("div", {
-    style: {
-      flex: 1,
-      minWidth: 0
-    }
-  }, /*#__PURE__*/React.createElement("div", {
-    style: {
-      fontWeight: 600,
-      fontSize: 13,
-      color: "#0F172A",
-      whiteSpace: "nowrap",
-      overflow: "hidden",
-      textOverflow: "ellipsis"
-    }
-  }, u.nome), /*#__PURE__*/React.createElement("div", {
-    style: {
-      fontSize: 11,
-      color: "#64748B"
-    }
-  }, u.tipo, " ", u.coren || u.crm, u.zap ? " · " + u.zap : "")), /*#__PURE__*/React.createElement("span", {
-    style: {
-      fontSize: 10,
-      fontWeight: 700,
-      padding: "2px 8px",
-      borderRadius: 99,
-      whiteSpace: "nowrap",
-      background: u.status === "aprovado" ? "#F0FDF4" : u.status === "pendente" ? "#FFFBEB" : "#FEF2F2",
-      color: sC[u.status] || "#64748B"
-    }
-  }, u.status),
-  /*#__PURE__*/React.createElement("button", {
-    onClick: () => resetarSenha(u),
-    className: "can-livro-toggle",
-    title: "Redefinir a senha para o registro profissional"
-  }, "🔑 Senha"),
-  u.auth_uid && tempoEspecial[u.auth_uid] && React.createElement(TempoTag, tempoEspecial[u.auth_uid]),
-  /*#__PURE__*/React.createElement("div", {
-    style: { display: "flex", gap: 6, flexShrink: 0 }
-  }, /*#__PURE__*/React.createElement("button", {
-    onClick: () => startEdit(u),
-    style: { padding: "5px 10px", border: "1px solid #E2E8F0", borderRadius: 6, background: "none", color: "#374151", cursor: "pointer", fontSize: 11 }
-  }, "✏️"), u.status === "pendente" && /*#__PURE__*/React.createElement("button", {
-    onClick: () => action("approve", u.id),
-    style: { padding: "5px 10px", border: "none", borderRadius: 6, background: "#16A34A", color: "#fff", cursor: "pointer", fontSize: 11, fontWeight: 600 }
-  }, "Aprovar"), u.status === "aprovado" && /*#__PURE__*/React.createElement("button", {
-    onClick: () => action("block", u.id),
-    style: { padding: "5px 10px", border: "1px solid #FCA5A5", borderRadius: 6, background: "none", color: "#DC2626", cursor: "pointer", fontSize: 11 }
-  }, "Bloquear"), u.status === "bloqueado" && /*#__PURE__*/React.createElement("button", {
-    onClick: () => action("unblock", u.id),
-    style: { padding: "5px 10px", border: "1px solid #86EFAC", borderRadius: 6, background: "none", color: "#16A34A", cursor: "pointer", fontSize: 11 }
-  }, "Desbloquear"), /*#__PURE__*/React.createElement("button", {
-    onClick: () => action("delete", u.id),
-    style: { padding: "5px 8px", border: "1px solid #E2E8F0", borderRadius: 6, background: "none", color: "#94A3B8", cursor: "pointer", fontSize: 11 }
-  }, "✕"))
-  ),
-  /*#__PURE__*/React.createElement("div", { style:{ borderTop:"1px solid #F1F5F9", paddingTop:8 } },
-  /*#__PURE__*/React.createElement("div", { style:{ flex:1, minWidth:0 } },
-    React.createElement("div", { style:{ fontSize:10, fontWeight:700, color:"#94A3B8", textTransform:"uppercase", letterSpacing:".05em", marginBottom:4 } }, "Acesso"),
-    React.createElement("div", { style:{ display:"flex", gap:4, flexWrap:"wrap", marginBottom:8 } },
-      React.createElement("button", { onClick:()=>toggleFlag(u.id,"can_kanban",u.can_kanban,load), className:"can-livro-toggle"+(u.can_kanban?" on":"") }, u.can_kanban?"🗂 Kanban ✓":"🗂 Kanban"),
-      React.createElement("button", { onClick:()=>toggleFlag(u.id,"can_livro",u.can_livro,load), className:"can-livro-toggle"+(u.can_livro?" on":"") }, u.can_livro?"📒 Livro ✓":"📒 Livro"),
-      React.createElement("button", { onClick:()=>toggleFlag(u.id,"can_planilha",u.can_planilha,load), className:"can-livro-toggle"+(u.can_planilha?" on":"") }, u.can_planilha?"📋 Planilha ✓":"📋 Planilha")
+    style: { background:"#fff", border:"1px solid #E2E8F0", borderRadius:10, padding:"12px 16px", marginBottom:8 }
+  },
+    /* Linha 1: foto + info + status + ações */
+    React.createElement("div", { style:{ display:"flex", alignItems:"center", gap:10, flexWrap:"wrap" } },
+      /* Avatar */
+      React.createElement("div", { style:{ width:40, height:40, borderRadius:"50%", background:"#F1F5F9", overflow:"hidden", flexShrink:0, border:"1px solid #E2E8F0", display:"flex", alignItems:"center", justifyContent:"center" } },
+        u.foto
+          ? React.createElement("img", { src:u.foto, style:{ width:"100%", height:"100%", objectFit:"cover" } })
+          : React.createElement("span", { style:{ fontSize:16, color:"#CBD5E1" } }, "👤")
+      ),
+      /* Nome + registro */
+      React.createElement("div", { style:{ flex:1, minWidth:0 } },
+        React.createElement("div", { style:{ fontWeight:600, fontSize:13, color:"#0F172A", whiteSpace:"nowrap", overflow:"hidden", textOverflow:"ellipsis" } }, u.nome),
+        React.createElement("div", { style:{ fontSize:11, color:"#64748B" } }, u.tipo, " ", u.coren || u.crm, u.zap ? " · " + u.zap : "")
+      ),
+      /* Status badge */
+      React.createElement("span", { style:{ fontSize:10, fontWeight:700, padding:"2px 8px", borderRadius:99, whiteSpace:"nowrap", background: u.status==="aprovado"?"#F0FDF4":u.status==="pendente"?"#FFFBEB":"#FEF2F2", color: sC[u.status]||"#64748B" } }, u.status),
+      /* TempoTag */
+      u.auth_uid && tempoEspecial[u.auth_uid] && React.createElement(TempoTag, tempoEspecial[u.auth_uid]),
+      /* Botões de ação */
+      React.createElement("div", { style:{ display:"flex", gap:4, flexShrink:0, flexWrap:"wrap" } },
+        React.createElement("button", { onClick:()=>resetarSenha(u), className:"can-livro-toggle", title:"Redefinir senha" }, "🔑 Senha"),
+        React.createElement("button", { onClick:()=>startEdit(u), style:{ padding:"5px 10px", border:"1px solid #E2E8F0", borderRadius:6, background:"none", color:"#374151", cursor:"pointer", fontSize:11 } }, "✏️"),
+        u.status==="pendente" && React.createElement("button", { onClick:()=>action("approve",u.id), style:{ padding:"5px 10px", border:"none", borderRadius:6, background:"#16A34A", color:"#fff", cursor:"pointer", fontSize:11, fontWeight:600 } }, "Aprovar"),
+        u.status==="aprovado" && React.createElement("button", { onClick:()=>action("block",u.id), style:{ padding:"5px 10px", border:"1px solid #FCA5A5", borderRadius:6, background:"none", color:"#DC2626", cursor:"pointer", fontSize:11 } }, "Bloquear"),
+        u.status==="bloqueado" && React.createElement("button", { onClick:()=>action("unblock",u.id), style:{ padding:"5px 10px", border:"1px solid #86EFAC", borderRadius:6, background:"none", color:"#16A34A", cursor:"pointer", fontSize:11 } }, "Desbloquear"),
+        React.createElement("button", { onClick:()=>action("delete",u.id), style:{ padding:"5px 8px", border:"1px solid #E2E8F0", borderRadius:6, background:"none", color:"#94A3B8", cursor:"pointer", fontSize:11 } }, "✕")
+      )
     ),
-    React.createElement("div", { style:{ fontSize:10, fontWeight:700, color:"#94A3B8", textTransform:"uppercase", letterSpacing:".05em", marginBottom:4 } }, "Funções especiais"),
-    React.createElement("div", { style:{ display:"flex", gap:4, flexWrap:"wrap" } },
-      React.createElement("button", { onClick:()=>toggleFlag(u.id,"can_prioridade",u.can_prioridade,load), className:"can-livro-toggle"+(u.can_prioridade?" on":"") }, u.can_prioridade?"🔢 Prioridade ✓":"🔢 Prioridade"),
-      React.createElement("button", { onClick:()=>toggleFlag(u.id,"can_escala",u.can_escala,load), className:"can-livro-toggle"+(u.can_escala?" on":"") }, u.can_escala?"👥 Escala ✓":"👥 Escala"),
-      React.createElement("button", { onClick:()=>toggleFlag(u.id,"can_justificativa",u.can_justificativa,load), className:"can-livro-toggle"+(u.can_justificativa?" on":"") }, u.can_justificativa?"⚖ Justif. ✓":"⚖ Justif."),
-      React.createElement("button", { onClick:()=>toggleFlag(u.id,"can_acoes",u.can_acoes,load), className:"can-livro-toggle"+(u.can_acoes?" on":"") }, u.can_acoes?"✅ Tarefas ✓":"✅ Tarefas")
+    /* Linha 2: permissões */
+    React.createElement("div", { style:{ borderTop:"1px solid #F1F5F9", paddingTop:8 } },
+      React.createElement("div", { style:{ fontSize:10, fontWeight:700, color:"#94A3B8", textTransform:"uppercase", letterSpacing:".05em", marginBottom:4 } }, "Acesso"),
+      React.createElement("div", { style:{ display:"flex", gap:4, flexWrap:"wrap", marginBottom:8 } },
+        React.createElement("button", { onClick:()=>toggleFlag(u.id,"can_kanban",u.can_kanban,load), className:"can-livro-toggle"+(u.can_kanban?" on":"") }, u.can_kanban?"🗂 Kanban ✓":"🗂 Kanban"),
+        React.createElement("button", { onClick:()=>toggleFlag(u.id,"can_livro",u.can_livro,load), className:"can-livro-toggle"+(u.can_livro?" on":"") }, u.can_livro?"📒 Livro ✓":"📒 Livro"),
+        React.createElement("button", { onClick:()=>toggleFlag(u.id,"can_planilha",u.can_planilha,load), className:"can-livro-toggle"+(u.can_planilha?" on":"") }, u.can_planilha?"📋 Planilha ✓":"📋 Planilha")
+      ),
+      React.createElement("div", { style:{ fontSize:10, fontWeight:700, color:"#94A3B8", textTransform:"uppercase", letterSpacing:".05em", marginBottom:4 } }, "Funções especiais"),
+      React.createElement("div", { style:{ display:"flex", gap:4, flexWrap:"wrap" } },
+        React.createElement("button", { onClick:()=>toggleFlag(u.id,"can_prioridade",u.can_prioridade,load), className:"can-livro-toggle"+(u.can_prioridade?" on":"") }, u.can_prioridade?"🔢 Prioridade ✓":"🔢 Prioridade"),
+        React.createElement("button", { onClick:()=>toggleFlag(u.id,"can_escala",u.can_escala,load), className:"can-livro-toggle"+(u.can_escala?" on":"") }, u.can_escala?"👥 Escala ✓":"👥 Escala"),
+        React.createElement("button", { onClick:()=>toggleFlag(u.id,"can_justificativa",u.can_justificativa,load), className:"can-livro-toggle"+(u.can_justificativa?" on":"") }, u.can_justificativa?"⚖ Justif. ✓":"⚖ Justif."),
+        React.createElement("button", { onClick:()=>toggleFlag(u.id,"can_acoes",u.can_acoes,load), className:"can-livro-toggle"+(u.can_acoes?" on":"") }, u.can_acoes?"✅ Tarefas ✓":"✅ Tarefas")
+      )
     )
   )
-  )
-  ));
+);
 }
