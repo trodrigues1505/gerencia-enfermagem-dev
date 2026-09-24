@@ -346,8 +346,8 @@ function UsersPanel({
       padding: "12px 16px",
       marginBottom: 8,
       display: "flex",
-      alignItems: "center",
-      gap: 12
+      flexDirection: "column",
+      gap: 10
     }
   }, /*#__PURE__*/React.createElement("div", {
     style: {
@@ -404,6 +404,32 @@ function UsersPanel({
       color: sC[u.status] || "#64748B"
     }
   }, u.status),
+  /*#__PURE__*/React.createElement("button", {
+    onClick: () => resetarSenha(u),
+    className: "can-livro-toggle",
+    title: "Redefinir a senha para o registro profissional"
+  }, "🔑 Senha"),
+  u.auth_uid && tempoEspecial[u.auth_uid] && React.createElement(TempoTag, tempoEspecial[u.auth_uid]),
+  /*#__PURE__*/React.createElement("div", {
+    style: { display: "flex", gap: 6, flexShrink: 0 }
+  }, /*#__PURE__*/React.createElement("button", {
+    onClick: () => startEdit(u),
+    style: { padding: "5px 10px", border: "1px solid #E2E8F0", borderRadius: 6, background: "none", color: "#374151", cursor: "pointer", fontSize: 11 }
+  }, "✏️"), u.status === "pendente" && /*#__PURE__*/React.createElement("button", {
+    onClick: () => action("approve", u.id),
+    style: { padding: "5px 10px", border: "none", borderRadius: 6, background: "#16A34A", color: "#fff", cursor: "pointer", fontSize: 11, fontWeight: 600 }
+  }, "Aprovar"), u.status === "aprovado" && /*#__PURE__*/React.createElement("button", {
+    onClick: () => action("block", u.id),
+    style: { padding: "5px 10px", border: "1px solid #FCA5A5", borderRadius: 6, background: "none", color: "#DC2626", cursor: "pointer", fontSize: 11 }
+  }, "Bloquear"), u.status === "bloqueado" && /*#__PURE__*/React.createElement("button", {
+    onClick: () => action("unblock", u.id),
+    style: { padding: "5px 10px", border: "1px solid #86EFAC", borderRadius: 6, background: "none", color: "#16A34A", cursor: "pointer", fontSize: 11 }
+  }, "Desbloquear"), /*#__PURE__*/React.createElement("button", {
+    onClick: () => action("delete", u.id),
+    style: { padding: "5px 8px", border: "1px solid #E2E8F0", borderRadius: 6, background: "none", color: "#94A3B8", cursor: "pointer", fontSize: 11 }
+  }, "✕"))
+  ),
+  /*#__PURE__*/React.createElement("div", { style:{ borderTop:"1px solid #F1F5F9", paddingTop:8 } },
   /*#__PURE__*/React.createElement("div", { style:{ flex:1, minWidth:0 } },
     React.createElement("div", { style:{ fontSize:10, fontWeight:700, color:"#94A3B8", textTransform:"uppercase", letterSpacing:".05em", marginBottom:4 } }, "Acesso"),
     React.createElement("div", { style:{ display:"flex", gap:4, flexWrap:"wrap", marginBottom:8 } },
@@ -418,79 +444,7 @@ function UsersPanel({
       React.createElement("button", { onClick:()=>toggleFlag(u.id,"can_justificativa",u.can_justificativa,load), className:"can-livro-toggle"+(u.can_justificativa?" on":"") }, u.can_justificativa?"⚖ Justif. ✓":"⚖ Justif."),
       React.createElement("button", { onClick:()=>toggleFlag(u.id,"can_acoes",u.can_acoes,load), className:"can-livro-toggle"+(u.can_acoes?" on":"") }, u.can_acoes?"✅ Tarefas ✓":"✅ Tarefas")
     )
-  ),
-  /*#__PURE__*/React.createElement("button", {
-    onClick: () => resetarSenha(u),
-    className: "can-livro-toggle",
-    title: "Redefinir a senha para o registro profissional"
-  }, "🔑 Senha"),
-  u.senha_trocada === false && u.auth_uid && /*#__PURE__*/React.createElement("span", {
-    title: "Ainda não trocou a senha inicial",
-    style: { fontSize: 10, fontWeight: 700, color: "#92400E", background: "#FFFBEB",
-             border: "1px solid #FDE68A", borderRadius: 6, padding: "2px 6px" }
-  }, "senha inicial"),
-  u.auth_uid && tempoEspecial[u.auth_uid] && React.createElement(TempoTag, tempoEspecial[u.auth_uid]),
-  /*#__PURE__*/React.createElement("div", {
-    style: {
-      display: "flex",
-      gap: 6,
-      flexShrink: 0
-    }
-  }, /*#__PURE__*/React.createElement("button", {
-    onClick: () => startEdit(u),
-    style: {
-      padding: "5px 10px",
-      border: "1px solid #E2E8F0",
-      borderRadius: 6,
-      background: "none",
-      color: "#374151",
-      cursor: "pointer",
-      fontSize: 11
-    }
-  }, "✏️"), u.status === "pendente" && /*#__PURE__*/React.createElement("button", {
-    onClick: () => action("approve", u.id),
-    style: {
-      padding: "5px 10px",
-      border: "none",
-      borderRadius: 6,
-      background: "#16A34A",
-      color: "#fff",
-      cursor: "pointer",
-      fontSize: 11,
-      fontWeight: 600
-    }
-  }, "Aprovar"), u.status === "aprovado" && /*#__PURE__*/React.createElement("button", {
-    onClick: () => action("block", u.id),
-    style: {
-      padding: "5px 10px",
-      border: "1px solid #FCA5A5",
-      borderRadius: 6,
-      background: "none",
-      color: "#DC2626",
-      cursor: "pointer",
-      fontSize: 11
-    }
-  }, "Bloquear"), u.status === "bloqueado" && /*#__PURE__*/React.createElement("button", {
-    onClick: () => action("unblock", u.id),
-    style: {
-      padding: "5px 10px",
-      border: "1px solid #86EFAC",
-      borderRadius: 6,
-      background: "none",
-      color: "#16A34A",
-      cursor: "pointer",
-      fontSize: 11
-    }
-  }, "Desbloquear"), /*#__PURE__*/React.createElement("button", {
-    onClick: () => action("delete", u.id),
-    style: {
-      padding: "5px 8px",
-      border: "1px solid #E2E8F0",
-      borderRadius: 6,
-      background: "none",
-      color: "#94A3B8",
-      cursor: "pointer",
-      fontSize: 11
-    }
-  }, "✕")))));
+  )
+  )
+  ));
 }
