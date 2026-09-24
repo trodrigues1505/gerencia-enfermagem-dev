@@ -46,6 +46,20 @@ function AcoesEnfermagem({ currentUser, userId, onClose }) {
   async function handleSave(){
     var f=getForm();
     if(!f.titulo.trim()){ showT("Título obrigatório","err"); return; }
+    /* Bloquear prioridade duplicada para o mesmo responsável */
+    if(f.prioridade&&f.responsavel_id){
+      var pr=parseInt(f.prioridade,10);
+      var conflitoPr=acoes.find(function(a){
+        return a.responsavel_id===f.responsavel_id
+          && parseInt(a.prioridade,10)===pr
+          && a.status!=="concluida"
+          && (!editing||a.id!==editing.id);
+      });
+      if(conflitoPr){
+        showT("Prioridade P"+pr+" já existe para "+conflitoPr.responsavel_nome+". Escolha outra.","err");
+        return;
+      }
+    }
     var pr=f.prioridade?parseInt(f.prioridade,10):null;
     var resp=users.find(function(u){return u.id===f.responsavel_id;});
     var body={
@@ -311,13 +325,18 @@ function AcoesEnfermagem({ currentUser, userId, onClose }) {
             React.createElement("div",{style:{fontSize:11,color:"#94A3B8"}},"Nenhuma tarefa concluid\xE1 ainda.")
           ),
           !loading&&concluidas.map(function(a){
-            return React.createElement("div",{key:a.id,style:{background:"#F8FAFC",border:"1px solid #E2E8F0",borderLeft:"3px solid #22C55E",borderRadius:10,padding:"10px 13px",marginBottom:6,opacity:0.75}},
-              React.createElement("div",{style:{display:"flex",justifyContent:"space-between",alignItems:"center",gap:8}},
-                React.createElement("div",null,
+            var tempoLabel=a.tempo_min>0?(a.tempo_min>=60?Math.floor(a.tempo_min/60)+"h"+String(a.tempo_min%60).padStart(2,"0")+"min":a.tempo_min+"min"):null;
+            return React.createElement("div",{key:a.id,style:{background:"#F8FAFC",border:"1px solid #E2E8F0",borderLeft:"3px solid #22C55E",borderRadius:10,padding:"10px 13px",marginBottom:6,opacity:0.85}},
+              React.createElement("div",{style:{display:"flex",justifyContent:"space-between",alignItems:"flex-start",gap:8}},
+                React.createElement("div",{style:{flex:1,minWidth:0}},
                   React.createElement("div",{style:{fontWeight:600,fontSize:12,color:"#374151",textDecoration:"line-through"}},a.titulo),
-                  React.createElement("div",{style:{fontSize:10,color:"#94A3B8",marginTop:2}},"\u2713 ",a.concluida_por_nome," \xB7 ",new Date(a.concluida_em).toLocaleString("pt-BR",{day:"2-digit",month:"2-digit",hour:"2-digit",minute:"2-digit"}))
+                  a.responsavel_nome&&React.createElement("div",{style:{fontSize:10,color:"#7C3AED",marginTop:1,fontWeight:600}},"👤 "+a.responsavel_nome),
+                  React.createElement("div",{style:{display:"flex",gap:8,flexWrap:"wrap",fontSize:10,color:"#94A3B8",marginTop:2}},
+                    React.createElement("span",null,"✓ ",a.concluida_por_nome," · ",new Date(a.concluida_em).toLocaleString("pt-BR",{day:"2-digit",month:"2-digit",hour:"2-digit",minute:"2-digit"})),
+                    tempoLabel&&React.createElement("span",{style:{color:"#3B82F6",fontWeight:600}},"⏱ "+tempoLabel)
+                  )
                 ),
-                podeGerir&&React.createElement("button",{onClick:function(){handleReabrir(a);},style:{padding:"4px 10px",border:"1px solid #E2E8F0",borderRadius:6,background:"none",color:"#64748B",cursor:"pointer",fontSize:10}},"\u21A9 Reabrir")
+                podeGerir&&React.createElement("button",{onClick:function(){handleReabrir(a);},style:{padding:"4px 10px",border:"1px solid #E2E8F0",borderRadius:6,background:"none",color:"#64748B",cursor:"pointer",fontSize:10}},"↩ Reabrir")
               )
             );
           })
