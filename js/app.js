@@ -1076,7 +1076,9 @@ function App() {
       background: view === id ? "#0F172A" : "transparent",
       color: view === id ? "#fff" : "#64748B",
       cursor: "pointer",
-      transition: "all .15s"
+      transition: "all .15s",
+      flexShrink: 0,
+      whiteSpace: "nowrap"
     }
   }, label);
 
@@ -1095,7 +1097,7 @@ function App() {
       setOpen(true);
     }
     return /*#__PURE__*/React.createElement("div", {
-      style: { position:"relative", display:"inline-block" },
+      style: { position:"relative", display:"inline-block", flexShrink: 0 },
       onMouseEnter: handleEnter,
       onMouseLeave: () => setOpen(false)
     },
@@ -1230,9 +1232,9 @@ function App() {
         /*#__PURE__*/React.createElement("div", { className: "ge-nav-inner", style: { background: "#fff", border: "1px solid #E2E8F0", borderRadius: 8, padding: "2px", display: "flex", gap: 1, flexShrink: 0 } },
           /*#__PURE__*/React.createElement(NavBtn, { id: "dashboard", label: "📊 Dashboard" }),
           /*#__PURE__*/React.createElement(KanbanDropdown, { view: view, setView: setView }),
-          /*#__PURE__*/React.createElement("a", { href: "remocao.html", style: { padding: "5px 14px", borderRadius: 6, border: "none", fontSize: 12, fontWeight: 400, background: "transparent", color: "#64748B", cursor: "pointer", textDecoration: "none", display: "inline-flex", alignItems: "center" } }, "🚑 Remoção"),
-          podeLivro && /*#__PURE__*/React.createElement("div", { className: "livro-btn" }, /*#__PURE__*/React.createElement("button", { onClick: () => setShowLivro(true), style: { padding: "5px 14px", borderRadius: 6, border: "none", fontSize: 12, fontWeight: 400, background: "transparent", color: "#64748B", cursor: "pointer", display: "inline-flex", alignItems: "center", gap: 5 } }, "📒 Livro de Saída"), pendentesCount > 0 && /*#__PURE__*/React.createElement("span", { className: "livro-badge" }, pendentesCount)),
-          /*#__PURE__*/React.createElement("div", { className: "livro-btn" }, /*#__PURE__*/React.createElement("button", { onClick: () => setShowAcoes(true), title: "Tarefas de enfermagem persistentes entre turnos", style: { padding: "5px 14px", borderRadius: 6, border: "none", fontSize: 12, fontWeight: 400, background: "transparent", color: "#64748B", cursor: "pointer", display: "inline-flex", alignItems: "center", gap: 5 } }, "\u2705 A\xE7\xF5es")),
+          /*#__PURE__*/React.createElement("a", { href: "remocao.html", style: { padding: "5px 14px", borderRadius: 6, border: "none", fontSize: 12, fontWeight: 400, background: "transparent", color: "#64748B", cursor: "pointer", textDecoration: "none", display: "inline-flex", alignItems: "center" , flexShrink: 0, whiteSpace: "nowrap" } }, "🚑 Remoção"),
+          podeLivro && /*#__PURE__*/React.createElement("div", { className: "livro-btn", style: { flexShrink: 0 } }, /*#__PURE__*/React.createElement("button", { onClick: () => setShowLivro(true), style: { padding: "5px 14px", borderRadius: 6, border: "none", fontSize: 12, fontWeight: 400, background: "transparent", color: "#64748B", cursor: "pointer", display: "inline-flex", alignItems: "center", gap: 5 } }, "📒 Livro de Saída"), pendentesCount > 0 && /*#__PURE__*/React.createElement("span", { className: "livro-badge" }, pendentesCount)),
+          /*#__PURE__*/React.createElement("div", { className: "livro-btn", style: { flexShrink: 0 } }, /*#__PURE__*/React.createElement("button", { onClick: () => setShowAcoes(true), title: "Tarefas de enfermagem persistentes entre turnos", style: { padding: "5px 14px", borderRadius: 6, border: "none", fontSize: 12, fontWeight: 400, background: "transparent", color: "#64748B", cursor: "pointer", display: "inline-flex", alignItems: "center", gap: 5 } }, "\u2705 A\xE7\xF5es")),
           isAdmin && /*#__PURE__*/React.createElement(NavBtn, { id: "usuarios", label: "\u{1F465} Profissionais" }),
           isAdmin && /*#__PURE__*/React.createElement(NavBtn, { id: "historico", label: "📜 Histórico" }),
           isAdmin && /*#__PURE__*/React.createElement(NavBtn, { id: "publicacoes", label: "📰 Publicações" })
@@ -1545,7 +1547,8 @@ function App() {
     isAdmin && React.createElement(FloatingActions, {
       cards: cards,
       discrepancias: discrepancias,
-      pendencias: acoesCount,
+      pendencias: pendenciasCount,
+      acoes: acoesCount,
       setView: setView
     }),
     /*#__PURE__*/React.createElement(Toast, { toast: toast })
