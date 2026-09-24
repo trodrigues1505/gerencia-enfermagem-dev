@@ -828,10 +828,10 @@ function CardModal({
   }, "Nenhum comentário ainda."), comments.map(c => /*#__PURE__*/React.createElement("div", {
     key: c.id,
     style: {
-      background: c.is_admin ? "#EFF6FF" : "#F8FAFC",
+      background: c.is_system ? "#FEFBFF" : c.is_admin ? "#EFF6FF" : "#F8FAFC",
       borderRadius: 8,
       padding: "10px 12px",
-      border: `1px solid ${c.is_admin ? "#BFDBFE" : "#E2E8F0"}`
+      border: `1px solid ${c.is_system ? "#DDD6FE" : c.is_admin ? "#BFDBFE" : "#E2E8F0"}`
     }
   }, /*#__PURE__*/React.createElement("div", {
     style: {
@@ -922,7 +922,7 @@ function CardModal({
       fontSize: 10,
       padding: "0 2px"
     }
-  }, "↩"), (currentUser?.role === "admin" || c.autor_id === currentUser?.id) && /*#__PURE__*/React.createElement("button", {
+  }, "↩"), !c.is_system && (currentUser?.role === "admin" || c.autor_id === currentUser?.id) && /*#__PURE__*/React.createElement("button", {
     onClick: () => onDelComment(c.id),
     style: {
       background: "none",
