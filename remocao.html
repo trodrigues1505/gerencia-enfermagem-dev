@@ -767,103 +767,210 @@ function normalizeRowValues(row){
   return out;
 }
 
-// Modal: colar dados copiados do Excel (TSV) e importar como novos registros
+// ── Extrai dados de UMA ficha CROSS e retorna objeto com campos da planilha ──
+// Substitui o antigo parser de TSV/Excel — agora aceita texto bruto da ficha.
+function parseFichaCross(txt){
+  if(!txt||!txt.trim()) return null;
+
+  // Nº da ficha — tolera espaços/quebras entre "FICHA N°" e "SS-"
+  const mFicha = txt.match(/FICHA\s*N[°º˚o]?\s*[\r\n\s]*(SS-\d+-\d+)/i);
+  const ficha_cross = mFicha ? mFicha[1] : "";
+
+  // Data da solicitação (cabeçalho) → ISO para o banco (YYYY-MM-DD)
+  const mData = txt.match(/\bData\s*[:\-]?\s*[\r\n\t]*(\d{2}\/\d{2}\/\d{4})/i);
+  const data_solicitacao = mData ? normalizeDateValue(mData[1]) : null;
+
+  // Hora da solicitação → HH:MM
+  const mHora = txt.match(/\bHora\s*[:\-]?\s*[\r\n\t]*(\d{2}:\d{2})(?::\d{2})?/i);
+  const horario_solicitacao = mHora ? mHora[1] : null;
+
+  // Nome do paciente → maiúsculas
+  const mNome = txt.match(/Nome\s*(?:do\s*Paciente)?\s*[:\-]?\s*[\r\n\t]*([^\r\n\t]+)/i);
+  const nome_paciente = mNome ? mNome[1].trim().toUpperCase() : "";
+
+  // Setor: SOMENTE campo "SETOR/LEITO" ou "SETOR" explícito. Se ausente → null.
+  // NUNCA usar Unidade Solicitante. NUNCA inferir por idade.
+  const mSetorLeito = txt.match(/SETOR\s*[\/]\s*LEITO\s*[:\-]?\s*[\r\n\t]*([^\r\n\t]+)/i);
+  const mSetor      = txt.match(/\bSETOR\s*[:\-]?\s*[\r\n\t]*([^\r\n\t]+)/i);
+  const setor = mSetorLeito
+    ? mSetorLeito[1].trim().toUpperCase()
+    : mSetor ? mSetor[1].trim().toUpperCase() : null;
+
+  // 1º Recurso → deduz procedimento e especialidade
+  const mRec = txt.match(/1[°º˚o]?\s*Recurso\s*[:\-]?\s*[\r\n\t]*([^\r\n]+)/i);
+  const recursoRaw = mRec ? mRec[1].trim() : "";
+  let procedimento = null;
+  let especialidade = null;
+  if(recursoRaw){
+    if(/Leito\s+UTI/i.test(recursoRaw)){
+      procedimento = "LEITO"; especialidade = "UTI";
+    } else if(/Tomografia/i.test(recursoRaw)){
+      procedimento = "EXAME"; especialidade = "TOMOGRAFIA";
+    } else if(/Resson[aâ]ncia/i.test(recursoRaw)){
+      procedimento = "EXAME"; especialidade = "RESSONÂNCIA";
+    } else if(/USG|Ultrassom/i.test(recursoRaw)){
+      procedimento = "EXAME"; especialidade = "ULTRASSONOGRAFIA";
+    } else if(/Raio[\s\-]*X/i.test(recursoRaw)){
+      procedimento = "EXAME"; especialidade = "RAIO-X";
+    } else if(/Exame/i.test(recursoRaw)){
+      procedimento = "EXAME";
+      const mExNome = recursoRaw.match(/Exame\s*[-–]\s*(.+)/i);
+      especialidade = mExNome ? mExNome[1].trim().toUpperCase() : "EXAME";
+    } else if(/Transfer[eê]ncia/i.test(recursoRaw)){
+      procedimento = "OUTRO"; especialidade = recursoRaw.toUpperCase();
+    } else if(/Leito/i.test(recursoRaw)){
+      procedimento = "LEITO";
+    } else if(/Especialidade\s*[-–]\s*(.+)/i.test(recursoRaw)){
+      procedimento = "AVALIAÇÃO";
+      const mEsp = recursoRaw.match(/Especialidade\s*[-–]\s*(.+)/i);
+      especialidade = mEsp ? mEsp[1].trim().toUpperCase() : recursoRaw.toUpperCase();
+    } else {
+      procedimento = "AVALIAÇÃO";
+      especialidade = recursoRaw.toUpperCase();
+    }
+  }
+
+  // CID/Diagnóstico — CID 1 → CID 2 → vazio. NUNCA resumo clínico.
+  const mCid1 = txt.match(/CID\s*1\s*[:\-]?\s*[\r\n\t]*([^\r\n\t]+)/i);
+  const mCid2 = txt.match(/CID\s*2\s*[:\-]?\s*[\r\n\t]*([^\r\n\t]+)/i);
+  const cid1r = mCid1 ? mCid1[1].trim() : "";
+  const cid2r = mCid2 ? mCid2[1].trim() : "";
+  const cid1 = /n[ãa]o\s*informado/i.test(cid1r) ? "" : cid1r;
+  const cid2 = /n[ãa]o\s*informado/i.test(cid2r) ? "" : cid2r;
+  const diagnostico = cid1 ? cid1.toUpperCase() : cid2 ? cid2.toUpperCase() : null;
+
+  // Médico Solicitante — valor na linha seguinte ao rótulo (padrão real das fichas)
+  const mMed = txt.match(/M[eé]dico\s+Solicitante\s*[:\-]?\s*[\r\n]+\s*([^\r\n\t]+?)(?:\s{2,}|\t|\s*CRM|[\r\n]|$)/i)
+             || txt.match(/M[eé]dico\s+Solicitante\s*:\s*([^\r\n\t]+)/i);
+  const medico = mMed ? mMed[1].trim() : null;
+
+  // Gravidade — campo explícito; fallback: varredura no texto
+  let gravidade = "AMARELO";
+  const mGrav = txt.match(/(?:Gravidade|Prioridade)\s+(?:de\s+atendimento\s*:?\s*)?(\d+|[^\r\n\t]+)/i);
+  if(mGrav){
+    const g = mGrav[1].trim().toUpperCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"");
+    if(/^1$|EMERGENCI/.test(g))       gravidade = "VERMELHO";
+    else if(/^2$|^URGENCI/.test(g))   gravidade = "AMARELO";
+    else if(/^3$|MENOR/.test(g))      gravidade = "VERDE";
+    else if(/^4$|AGENDAMENTO/.test(g)) gravidade = "CINZA";
+  } else {
+    if(/Emerg[eê]ncia|Prioridade\s*1/i.test(txt))           gravidade = "VERMELHO";
+    else if(/Menor\s+urg[eê]ncia|Prioridade\s*3/i.test(txt)) gravidade = "VERDE";
+    else if(/Agendamento|Prioridade\s*4/i.test(txt))          gravidade = "CINZA";
+  }
+
+  // Status
+  let status = null;
+  if(/Finalizou\s+a\s+ficha/i.test(txt))
+    status = "FICHA ENCERRADA PELO CROSS";
+  else if(/Cancelou\s+Solicita[çc][aã]o|Cancelada\s+pelo\s+solicitante/i.test(txt))
+    status = "CANCELADA PELO SOLICITANTE";
+
+  // Data/Hora resposta CROSS — bloco FINALIZAÇÃO; fallback: Aceitou Solicitação
+  let data_resposta_cross = null;
+  let horario_resposta_cross = null;
+  const mFinal = txt.match(/FINALIZA[ÇC][AÃ]O[\s\S]*?Data\s*:\s*(\d{2}\/\d{2}\/\d{4})[\s\S]*?Hora\s*:\s*(\d{2}:\d{2})(?::\d{2})?/i);
+  if(mFinal){
+    data_resposta_cross    = normalizeDateValue(mFinal[1]);
+    horario_resposta_cross = mFinal[2];
+  } else {
+    const mAceitou = txt.match(/Aceitou\s+Solicita[çc][aã]o[\s\S]*?(\d{2}\/\d{2}\/\d{4})\s+(\d{2}:\d{2})(?::\d{2})?/i);
+    if(mAceitou){
+      data_resposta_cross    = normalizeDateValue(mAceitou[1]);
+      horario_resposta_cross = mAceitou[2];
+    }
+  }
+
+  // Instituição destino — somente se houver aceite explícito no Histórico
+  const temAceite = /Aceitou\s+Solicita[çc][aã]o/i.test(txt);
+  const mHosp = txt.match(/Unidade\s+Receptora\s*[:\-]?\s*[\r\n\t]*([^\r\n\t]+)/i);
+  const instituicao_destino = (temAceite && mHosp) ? mHosp[1].trim().toUpperCase() : null;
+
+  // Observação — campo "Observações" ou fallback Resumo Clínico; quebras → espaço
+  let observacao = null;
+  const mObs = txt.match(/Observa[çc][õo]es?\s*[:\-]?\s*[\r\n\t]*([\s\S]*?)(?=\n\s*[A-ZÁÉÍÓÚÂÊÔÃÕÇ][^\n:]{2,40}:|$)/i);
+  if(mObs && mObs[1].trim()){
+    observacao = mObs[1].trim().replace(/[\r\n\t]+/g," ");
+  } else {
+    const mRes = txt.match(/Resumo\s*Cl[íi]nico\s*[:\-]?\s*[\r\n\t]*([\s\S]*?)(?=\n\s*[A-ZÁÉÍÓÚÂÊÔÃÕÇ][^\n:]{2,40}:|$)/i);
+    if(mRes && mRes[1].trim()) observacao = mRes[1].trim().replace(/[\r\n\t]+/g," ");
+  }
+
+  // Monta o objeto com os campos internos da planilha de remoção
+  const row = {};
+  if(ficha_cross)            row.ficha_cross            = ficha_cross;
+  if(nome_paciente)          row.nome_paciente           = nome_paciente;
+  if(data_solicitacao)       row.data_solicitacao        = data_solicitacao;
+  if(horario_solicitacao)    row.horario_solicitacao     = horario_solicitacao;
+  if(setor)                  row.setor                   = setor;
+  if(procedimento)           row.procedimento            = procedimento;
+  if(especialidade)          row.especialidade           = especialidade;
+  if(diagnostico)            row.diagnostico             = diagnostico;
+  if(medico)                 row.medico                  = medico;
+  if(gravidade)              row.gravidade               = gravidade;
+  if(status)                 row.status                  = status;
+  if(data_resposta_cross)    row.data_resposta_cross     = data_resposta_cross;
+  if(horario_resposta_cross) row.horario_resposta_cross  = horario_resposta_cross;
+  if(instituicao_destino)    row.instituicao_destino     = instituicao_destino;
+  if(observacao)             row.observacao              = observacao;
+
+  return Object.keys(row).length > 0 ? row : null;
+}
+
+// Modal: colar texto bruto da ficha CROSS e importar como novos registros
 function PasteModal({onClose,onImport}){
   const [txt,setTxt]=useState("");
   const [busy,setBusy]=useState(false);
-  const HDR_MAP=useMemo(()=>{
-    const m={};
-    COLS.forEach(([f,planilha,xls])=>{ m[normHdr(planilha)]=f; m[normHdr(xls)]=f; });
-    return m;
-  },[]);
+
+  // Divide em blocos por ficha e parseia cada uma
   function parse(){
-    const lines=txt.replace(/\r/g,"").split("\n").filter(l=>l.trim()!=="");
-    if(lines.length===0)return [];
-    const firstCells=lines[0].split("\t").map(normHdr);
-    const matched=firstCells.filter(c=>HDR_MAP[c]).length;
-    const hasHeader = matched>=Math.max(2,Math.floor(firstCells.length*0.4));
-    let fieldOrder;
-    let dataLines;
-    if(hasHeader){
-      fieldOrder=firstCells.map(c=>HDR_MAP[c]||null);
-      dataLines=lines.slice(1);
-    }else{
-      // B3: SEM FALLBACK. Antes assumia a ordem das 24 colunas de COLS — se a
-      // copia do CROSS omitisse uma coluna (PROCEDIMENTO some com frequencia,
-      // posicao 6), TODO o lote entrava deslocado uma casa e sem aviso:
-      // especialidade recebia diagnostico, status recebia gravidade. Foi assim
-      // que "TOMOGRAFIA" foi parar em instituicao_destino e "HEMODIALISE" em
-      // status. Em import de lote, errar em silencio e pior que recusar.
-      throw new Error("CABECALHO_NAO_RECONHECIDO");
-    }
-    return dataLines.map(line=>{
-      const cells=line.split("\t");
-      const row={};
-      fieldOrder.forEach((f,i)=>{ if(f && cells[i]!==undefined && cells[i]!=="") row[f]=cells[i].trim(); });
-      return normalizeRowValues(row);
-    }).filter(r=>Object.keys(r).length>0);
+    const blocos = txt.split(/(?=FICHA\s*N[°º˚o]?\s*[\r\n\s]*SS-\d+-\d+)/i).filter(b=>b.trim());
+    if(blocos.length===0) return [];
+    return blocos.map(parseFichaCross).filter(Boolean);
   }
+
   async function doImport(){
-    let rows;
-    try{ rows=parse(); }
-    catch(e){
-      alert("Cabecalho nao reconhecido.\n\nCopie tambem a LINHA DE CABECALHO da planilha, junto com os dados.\n\nSem o cabecalho nao da para saber a que coluna cada valor pertence — e um import as cegas grava os valores nos campos errados.");
+    const rows = parse();
+    if(rows.length===0){
+      alert("Nenhuma ficha CROSS reconhecida.\n\nCole o texto completo copiado da página da ficha no sistema CROSS.");
       return;
     }
-    if(rows.length===0){alert("Nada reconhecível para importar. Cole os dados copiados do Excel incluindo a linha de cabeçalho.");return;}
     setBusy(true);
     await onImport(rows);
     setBusy(false);
   }
-  let erroParse=null;
-  let preview=[];
-  if(txt.trim()){
-    try{ preview=parse(); }
-    catch(e){ erroParse=e.message; preview=[]; }
-  }
-  // B4: valida cada linha contra o dicionario de dominio (canon.js).
-  // Pega valor que pertence a OUTRO campo — o sintoma do deslocamento — e
-  // valor simplesmente desconhecido. Avisa, nao bloqueia: quem digita decide.
-  const avisos=[];
-  if(!erroParse && typeof Canon!=="undefined"){
-    preview.forEach((row,i)=>{
-      const v=Canon.validarLinha(row);
-      v.problemas.forEach(pr=>avisos.push({linha:i+1,msg:pr.msg,tipo:pr.tipo}));
-    });
-  }
+
+  const preview = txt.trim() ? parse() : [];
+
   return(
     <div className="mbk">
       <div className="mdl" style={{maxWidth:640}}>
         <div className="mhd">
-          <div><h2>Colar da planilha (Excel)</h2><p>Copie as células no Excel e cole aqui</p></div>
+          <div><h2>Importar ficha CROSS</h2><p>Cole o texto bruto copiado do sistema CROSS</p></div>
           <button className="btn btn-g btn-sm" onClick={onClose}><Ico n="x" s={13}/></button>
         </div>
         <div className="mbd">
+          <div style={{fontSize:11,color:"#64748B",marginBottom:8,lineHeight:1.6}}>
+            Abra a ficha no sistema CROSS, selecione tudo (<b>Ctrl+A</b>), copie (<b>Ctrl+C</b>) e cole aqui.<br/>
+            O app extrai automaticamente: ficha, nome, data/hora, CID, recurso, gravidade, médico.
+          </div>
           <div className="fsc">
             <textarea rows={10} value={txt} onChange={e=>setTxt(e.target.value)}
-              placeholder="Cole aqui (Ctrl+V) as linhas copiadas do Excel. Se a primeira linha for o cabeçalho das colunas, ele será reconhecido automaticamente."
+              placeholder="Cole aqui o texto completo da ficha CROSS (Ctrl+V). Pode colar uma ou várias fichas de uma vez."
               style={{width:"100%",padding:"8px 10px",border:"1px solid #E2E8F0",borderRadius:7,fontSize:12,fontFamily:"monospace",resize:"vertical",outline:"none"}}/>
           </div>
-          {txt.trim()&&erroParse&&
-            <div style={{fontSize:12,color:"#991B1B",background:"#FEF2F2",border:"1px solid #FECACA",borderRadius:8,padding:"10px 12px",lineHeight:1.5}}>
-              <b>Cabeçalho não reconhecido.</b><br/>
-              Copie também a <b>linha de cabeçalho</b> da planilha, junto com os dados.
-              Sem ela não dá para saber a que coluna cada valor pertence, e o import gravaria os valores nos campos errados.
+          {txt.trim()&&preview.length===0&&
+            <div style={{fontSize:12,color:"#991B1B",background:"#FEF2F2",border:"1px solid #FECACA",borderRadius:8,padding:"10px 12px",lineHeight:1.5,marginTop:8}}>
+              Nenhuma ficha CROSS reconhecida. Verifique se o texto colado contém o cabeçalho <b>FICHA N° SS-XXXXXXXX-XX</b>.
             </div>}
-          {txt.trim()&&!erroParse&&<div style={{fontSize:11,color:"#64748B"}}>{preview.length} linha{preview.length!==1?"s":""} reconhecida{preview.length!==1?"s":""} para importar.</div>}
-          {txt.trim()&&!erroParse&&avisos.length>0&&
-            <div style={{fontSize:11,color:"#92400E",background:"#FFFBEB",border:"1px solid #FDE68A",borderRadius:8,padding:"10px 12px",marginTop:8,lineHeight:1.6}}>
-              <b>{avisos.length} valor{avisos.length!==1?"es":""} suspeito{avisos.length!==1?"s":""}:</b>
-              <ul style={{margin:"6px 0 0",paddingLeft:16}}>
-                {avisos.slice(0,8).map((a,i)=><li key={i}>Linha {a.linha}: {a.msg}</li>)}
-              </ul>
-              {avisos.length>8&&<div style={{marginTop:4}}>…e mais {avisos.length-8}.</div>}
-              <div style={{marginTop:6,color:"#78350F"}}>Pode importar assim mesmo — os valores ficam marcados como não classificados no painel.</div>
+          {txt.trim()&&preview.length>0&&
+            <div style={{fontSize:11,color:"#15803D",marginTop:6}}>
+              ✓ {preview.length} ficha{preview.length!==1?"s":""} reconhecida{preview.length!==1?"s":""} para importar.
             </div>}
         </div>
         <div className="mft">
           <button className="btn btn-g" onClick={onClose}>Cancelar</button>
-          <button className="btn btn-p" disabled={busy||!txt.trim()} onClick={doImport}>{busy?"Importando…":`Importar ${preview.length||""}`}</button>
+          <button className="btn btn-p" disabled={busy||preview.length===0} onClick={doImport}>{busy?"Importando…":`Importar ${preview.length||""}`}</button>
         </div>
       </div>
     </div>
