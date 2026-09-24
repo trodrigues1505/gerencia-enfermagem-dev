@@ -33,8 +33,10 @@ kbd{font-family:monospace;background:#F1F5F9;padding:1px 5px;border-radius:3px;b
 @media(max-width:640px){#ge-fab{bottom:calc(96px + env(safe-area-inset-bottom,0px));right:max(12px,env(safe-area-inset-right,12px))}}
 /* ── Mobile: nav barra ── */
 @media(max-width:640px){
-  .ge-nav-bar{overflow-x:auto!important;overflow-y:visible!important;flex-wrap:nowrap!important;-webkit-overflow-scrolling:touch;scrollbar-width:none;gap:4px!important;margin-bottom:8px!important}
-  .ge-nav-bar::-webkit-scrollbar{display:none}
+  .ge-nav-bar{overflow-x:auto!important;overflow-y:visible!important;flex-wrap:nowrap!important;-webkit-overflow-scrolling:touch;scrollbar-width:thin;scrollbar-color:#94A3B8 #F1F5F9;gap:4px!important;margin-bottom:8px!important;padding-bottom:6px!important}
+  .ge-nav-bar::-webkit-scrollbar{height:5px;display:block!important}
+  .ge-nav-bar::-webkit-scrollbar-track{background:#F1F5F9;border-radius:99px}
+  .ge-nav-bar::-webkit-scrollbar-thumb{background:#94A3B8;border-radius:99px}
   .ge-nav-inner{flex-shrink:0}
   /* Modais */
   .ge-modal-wrap{padding:8px!important}
