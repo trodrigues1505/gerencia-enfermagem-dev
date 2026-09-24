@@ -75,7 +75,7 @@ function App() {
 
   // ===== Contagem global de ações pendentes (para o balão) =====
   useEffect(() => {
-    if (!currentUser) { setPendenciasCount(0); return; }
+    if (!currentUser) { setAcoesCount(0); return; }
     let vivo = true;
     async function fetchPendentes() {
       try {
@@ -84,6 +84,9 @@ function App() {
       } catch(e) {}
     }
     fetchPendentes();
+    // Restaurar pendenciasCount do cache local (calculado pelo Dashboard quando montado)
+    const cached = loadLS("ge_pend_count", 0);
+    if (cached) setPendenciasCount(cached);
     const iv = setInterval(fetchPendentes, 60000);
     return () => { vivo = false; clearInterval(iv); };
   }, [currentUser]);
@@ -1228,8 +1231,8 @@ function App() {
     /* Conteúdo principal */
     /*#__PURE__*/React.createElement("div", { style: { maxWidth: 1600, margin: "0 auto", padding: "16px 20px" } },
       /* Barra de navegação e filtros */
-      /*#__PURE__*/React.createElement("div", { className: "ge-nav-bar", style: { display: "flex", gap: 8, marginBottom: 14, alignItems: "center", flexWrap: "nowrap", paddingBottom: 4, overflowX: "auto", WebkitOverflowScrolling: "touch" } },
-        /*#__PURE__*/React.createElement("div", { className: "ge-nav-inner", style: { background: "#fff", border: "1px solid #E2E8F0", borderRadius: 8, padding: "2px", display: "flex", gap: 1, flexShrink: 0 } },
+      /*#__PURE__*/React.createElement("div", { className: "ge-nav-bar", style: { display: "flex", gap: 8, marginBottom: 14, alignItems: "center", flexWrap: "nowrap", paddingBottom: 4 } },
+        /*#__PURE__*/React.createElement("div", { className: "ge-nav-inner", style: { background: "#fff", border: "1px solid #E2E8F0", borderRadius: 8, padding: "2px", display: "flex", gap: 1, flexShrink: 0, overflowX: "auto", WebkitOverflowScrolling: "touch" } },
           /*#__PURE__*/React.createElement(NavBtn, { id: "dashboard", label: "📊 Dashboard" }),
           /*#__PURE__*/React.createElement(KanbanDropdown, { view: view, setView: setView }),
           /*#__PURE__*/React.createElement("a", { href: "remocao.html", style: { padding: "5px 14px", borderRadius: 6, border: "none", fontSize: 12, fontWeight: 400, background: "transparent", color: "#64748B", cursor: "pointer", textDecoration: "none", display: "inline-flex", alignItems: "center" , flexShrink: 0, whiteSpace: "nowrap" } }, "🚑 Remoção"),
@@ -1278,7 +1281,7 @@ function App() {
       loading && /*#__PURE__*/React.createElement("div", { style: { textAlign: "center", padding: 48, color: "#94A3B8", fontSize: 14 } }, "Carregando dados…"),
 
       !loading && view === "dashboard" && /*#__PURE__*/React.createElement("div", { id: "view-content" },
-        /*#__PURE__*/React.createElement(Dashboard, { cards: filtered, cols: displayCols, dashMode: dashMode, setDashMode: setDashMode, isAdmin: isAdmin, lastPub: lastPub, currentUser: currentUser, discrepancias: discrepancias, onPendenciasChange: setPendenciasCount })
+        /*#__PURE__*/React.createElement(Dashboard, { cards: filtered, cols: displayCols, dashMode: dashMode, setDashMode: setDashMode, isAdmin: isAdmin, lastPub: lastPub, currentUser: currentUser, discrepancias: discrepancias, onPendenciasChange: (n) => { setPendenciasCount(n); saveLS("ge_pend_count", n); } })
       ),
       !loading && view === "usuarios" && isAdmin && /*#__PURE__*/React.createElement(UsersPanel, { currentUser: currentUser, userId: userId, showT: showT, cards: cards }),
       !loading && view === "historico" && isAdmin && /*#__PURE__*/React.createElement("div", { id: "view-content" },
