@@ -1174,7 +1174,7 @@ function App() {
     ),
     /* Banner edição / visualização */
     isAdmin && /*#__PURE__*/React.createElement("div", {
-      style: { background: "#FFFBEB", borderBottom: "1px solid #FDE68A", padding: "5px 20px", display: "flex", alignItems: "center", justifyContent: "space-between", position: "sticky", top: 48, zIndex: 99, gap: 8, flexWrap: "wrap" }
+      style: { background: "#FFFBEB", borderBottom: "1px solid #FDE68A", padding: "5px 20px", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8, flexWrap: "wrap" }
     },
       /*#__PURE__*/React.createElement("span", { style: { fontSize: 11, color: "#92400E", fontWeight: 500 } }, "✎ Modo de edição — alterações não ficam visíveis até publicar", lastPub ? ` · Última publicação: ${lastPub}` : ""),
       /*#__PURE__*/React.createElement("div", { style: { display: "flex", gap: 6, alignItems: "center" } },
