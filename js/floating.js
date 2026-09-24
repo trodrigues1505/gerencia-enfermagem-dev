@@ -279,7 +279,7 @@ function FloatingActions({ cards, discrepancias, pendencias, acoes, setView }) {
   var disc    = (discrepancias||[]).length;
   var pend    = (pendencias||0);
   var ac      = (acoes||0);
-  var total   = emergP + disc + pend + (semHosp > 0 ? 1 : 0) + ac;
+  var total   = emergP + disc + pend + semHosp + ac;
   if(total === 0) return null;
   var items = [];
   if(ac>0)       items.push({cor:"#7C3AED",label:ac+" tarefa"+(ac===1?"":"s")+" pendente"+(ac===1?"":"s"),acao:function(){},dica:"Tarefas de enfermagem pendentes, iniciadas ou pausadas"});
