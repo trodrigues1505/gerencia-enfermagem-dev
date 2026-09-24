@@ -896,7 +896,11 @@ function parseFichaCross(txt){
     if(mRes && mRes[1].trim()) observacao = mRes[1].trim().replace(/[\r\n\t]+/g," ");
   }
 
-  // Monta o objeto com os campos internos da planilha de remoção
+  // Monta o objeto com os campos internos da planilha de remoção.
+  // Só monta se tiver pelo menos ficha ou nome — evita retornar objeto
+  // com apenas { gravidade: "AMARELO" } para trechos de cabeçalho sem dados.
+  if(!ficha_cross && !nome_paciente) return null;
+
   const row = {};
   if(ficha_cross)            row.ficha_cross            = ficha_cross;
   if(nome_paciente)          row.nome_paciente           = nome_paciente;
@@ -907,14 +911,14 @@ function parseFichaCross(txt){
   if(especialidade)          row.especialidade           = especialidade;
   if(diagnostico)            row.diagnostico             = diagnostico;
   if(medico)                 row.medico                  = medico;
-  if(gravidade)              row.gravidade               = gravidade;
+  row.gravidade = gravidade; // sempre inclui — tem fallback AMARELO validado
   if(status)                 row.status                  = status;
   if(data_resposta_cross)    row.data_resposta_cross     = data_resposta_cross;
   if(horario_resposta_cross) row.horario_resposta_cross  = horario_resposta_cross;
   if(instituicao_destino)    row.instituicao_destino     = instituicao_destino;
   if(observacao)             row.observacao              = observacao;
 
-  return Object.keys(row).length > 0 ? row : null;
+  return row;
 }
 
 // Modal: colar texto bruto da ficha CROSS e importar como novos registros
