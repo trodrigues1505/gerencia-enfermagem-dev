@@ -788,13 +788,14 @@ function parseFichaCross(txt){
   const mNome = txt.match(/Nome\s*(?:do\s*Paciente)?\s*[:\-]?\s*[\r\n\t]*([^\r\n\t]+)/i);
   const nome_paciente = mNome ? mNome[1].trim().toUpperCase() : "";
 
-  // Setor: SOMENTE campo "SETOR/LEITO" ou "SETOR" explícito. Se ausente → null.
-  // NUNCA usar Unidade Solicitante. NUNCA inferir por idade.
+  // Setor: campo "SETOR/LEITO" ou "SETOR" explícito se houver.
+  // Padrão: CLÍNICA MÉDICA (igual ao preenchimento manual da planilha).
+  // NUNCA usar Unidade Solicitante.
   const mSetorLeito = txt.match(/SETOR\s*[\/]\s*LEITO\s*[:\-]?\s*[\r\n\t]*([^\r\n\t]+)/i);
   const mSetor      = txt.match(/\bSETOR\s*[:\-]?\s*[\r\n\t]*([^\r\n\t]+)/i);
   const setor = mSetorLeito
     ? mSetorLeito[1].trim().toUpperCase()
-    : mSetor ? mSetor[1].trim().toUpperCase() : null;
+    : mSetor ? mSetor[1].trim().toUpperCase() : "CLÍNICA MÉDICA";
 
   // 1º Recurso → deduz procedimento e especialidade
   const mRec = txt.match(/1[°º˚o]?\s*Recurso\s*[:\-]?\s*[\r\n\t]*([^\r\n]+)/i);
@@ -881,10 +882,15 @@ function parseFichaCross(txt){
     }
   }
 
-  // Instituição destino — somente se houver aceite explícito no Histórico
-  const temAceite = /Aceitou\s+Solicita[çc][aã]o/i.test(txt);
-  const mHosp = txt.match(/Unidade\s+Receptora\s*[:\-]?\s*[\r\n\t]*([^\r\n\t]+)/i);
-  const instituicao_destino = (temAceite && mHosp) ? mHosp[1].trim().toUpperCase() : null;
+  // Instituição destino — Unidade Receptora do bloco Resolução quando existir.
+  // Cobre tanto aceites formais (A1) quanto encaminhamentos A8.
+  // Uma instituição que só aparece em "Busca de Recursos" com recusa NÃO entra aqui
+  // pois a regex pega a Unidade Receptora do bloco Resolução (após "Resolução\nA1/A8").
+  const mResolucao = txt.match(/Resolu[çc][aã]o\s*\n[\s\S]*?Unidade\s+Receptora\s*[\r\n\t]*([^\r\n\t]+)/i);
+  const mHosp = mResolucao || txt.match(/Unidade\s+Receptora\s*[:\-]?\s*[\r\n\t]*([^\r\n\t]+)/i);
+  // Só usa se houver Finalização (ficha encerrada com destino definido)
+  const temFinalizacao = /FINALIZA[ÇC][AÃ]O/i.test(txt);
+  const instituicao_destino = (temFinalizacao && mHosp) ? mHosp[1].trim().toUpperCase() : null;
 
   // Observação — campo "Observações" ou fallback Resumo Clínico; quebras → espaço
   let observacao = null;
