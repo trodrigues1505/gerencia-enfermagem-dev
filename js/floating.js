@@ -272,15 +272,17 @@ function SnapshotPanel({
 }
 
 /* ── FloatingActions: balão flutuante de alertas (admin only) ── */
-function FloatingActions({ cards, discrepancias, pendencias, setView }) {
+function FloatingActions({ cards, discrepancias, pendencias, acoes, setView }) {
   var [open, setOpen] = React.useState(false);
   var emergP  = (cards||[]).filter(function(c){return c.grav==="emergencia"&&c.col_id==="pendente";}).length;
   var semHosp = (cards||[]).filter(function(c){return !c.hosp&&c.col_id!=="finalizado";}).length;
   var disc    = (discrepancias||[]).length;
   var pend    = (pendencias||0);
-  var total   = emergP + disc + pend + (semHosp > 0 ? 1 : 0);
+  var ac      = (acoes||0);
+  var total   = emergP + disc + pend + (semHosp > 0 ? 1 : 0) + ac;
   if(total === 0) return null;
   var items = [];
+  if(ac>0)       items.push({cor:"#7C3AED",label:ac+" tarefa"+(ac===1?"":"s")+" pendente"+(ac===1?"":"s"),acao:function(){},dica:"Tarefas de enfermagem pendentes, iniciadas ou pausadas"});
   if(emergP>0)   items.push({cor:"#EF4444",label:emergP+" emergênci"+(emergP===1?"a":"as")+" pendente"+(emergP===1?"":"s"),acao:function(){setView("kanban");},dica:"Pacientes com emergência aguardando aceite"});
   if(disc>0)     items.push({cor:"#F59E0B",label:disc+" discrepânci"+(disc===1?"a":"as")+" de fila",acao:function(){setView("dashboard");},dica:"Menor gravidade com aceite antes de mais grave na mesma especialidade"});
   if(pend>0)     items.push({cor:"#B91C1C",label:pend+" valor"+(pend===1?"":"es")+" a corrigir",acao:function(){setView("dashboard");},dica:"Valores não classificados na planilha de remoções"});
