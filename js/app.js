@@ -77,7 +77,7 @@ function App() {
     let vivo = true;
     async function fetchPendentes() {
       try {
-        const rows = await sbGet("acoes_enfermagem", "status=eq.pendente&select=id");
+        const rows = await sbGet("acoes_enfermagem", "status=in.(pendente,iniciada,pausada)&select=id");
         if (vivo) setPendenciasCount(Array.isArray(rows) ? rows.length : 0);
       } catch(e) {}
     }
@@ -1202,7 +1202,7 @@ function App() {
     /* Conteúdo principal */
     /*#__PURE__*/React.createElement("div", { style: { maxWidth: 1600, margin: "0 auto", padding: "16px 20px" } },
       /* Barra de navegação e filtros */
-      /*#__PURE__*/React.createElement("div", { className: "ge-nav-bar", style: { display: "flex", gap: 8, marginBottom: 14, alignItems: "center", flexWrap: "nowrap", paddingBottom: 4, overflow: "visible" } },
+      /*#__PURE__*/React.createElement("div", { className: "ge-nav-bar", style: { display: "flex", gap: 8, marginBottom: 14, alignItems: "center", flexWrap: "nowrap", paddingBottom: 4 } },
         /*#__PURE__*/React.createElement("div", { className: "ge-nav-inner", style: { background: "#fff", border: "1px solid #E2E8F0", borderRadius: 8, padding: "2px", display: "flex", gap: 1, flexShrink: 0 } },
           /*#__PURE__*/React.createElement(NavBtn, { id: "dashboard", label: "📊 Dashboard" }),
           /*#__PURE__*/React.createElement(KanbanDropdown, { view: view, setView: setView }),
