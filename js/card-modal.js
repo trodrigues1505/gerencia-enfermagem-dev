@@ -33,69 +33,112 @@ function _normGrav(v){
 }
 
 // Lê o texto bruto de UMA ficha CROSS e retorna objeto compatível com o card.
-// Substitui o antigo parseTSVToCard que dependia de TSV gerado por IA externa.
 function parseTSVToCard(txt){
   if(!txt||!txt.trim()) return null;
 
   // ── Nº da ficha ─────────────────────────────────────────────────────────
-  const mFicha = txt.match(/FICHA\s+N[°º˚o]?\s*\n?\s*(SS-\d+-\d+)/i);
+  // Tolera espaços, tabs e quebras entre "FICHA N°" e o número SS-
+  const mFicha = txt.match(/FICHA\s*N[°º˚o]?\s*[\r\n\s]*(SS-\d+-\d+)/i);
   const ficha_cross = mFicha ? mFicha[1] : "";
 
   // ── Data e hora da solicitação ───────────────────────────────────────────
-  const mData = txt.match(/\bData\s*[\t\n ]+(\d{2}\/\d{2}\/\d{4})/i);
+  // Busca o primeiro par Data/Hora após o número da ficha (cabeçalho)
+  const mData = txt.match(/\bData\s*[:\-]?\s*[\r\n\t]*(\d{2}\/\d{2}\/\d{4})/i);
   const adm = mData ? _normData(mData[1]) : "";
 
-  const mHora = txt.match(/\bHora\s*[\t\n ]+(\d{2}:\d{2}:\d{2})/i);
-  const hora_adm = mHora ? _normHora(mHora[1]) : "";
+  const mHora = txt.match(/\bHora\s*[:\-]?\s*[\r\n\t]*(\d{2}:\d{2})(?::\d{2})?/i);
+  const hora_adm = mHora ? mHora[1] : "";
 
   // ── Nome do paciente ─────────────────────────────────────────────────────
-  const mNome = txt.match(/Nome\s+do\s+Paciente\s*[\t\n :]+([^\n\t]+)/i);
+  const mNome = txt.match(/Nome\s*(?:do\s*Paciente)?\s*[:\-]?\s*[\r\n\t]*([^\r\n\t]+)/i);
   const nome = mNome ? mNome[1].trim().toUpperCase() : "";
 
-  // ── Idade ────────────────────────────────────────────────────────────────
-  // Ex: "40 anos 4 meses 23 dias" → guarda só "40 anos"
-  const mIdade = txt.match(/(\d+)\s*anos?/i);
-  const idadeAnos = mIdade ? parseInt(mIdade[1],10) : null;
-  const idade = idadeAnos !== null ? idadeAnos+" anos" : "";
+  // ── Idade: apenas o número inteiro de anos ───────────────────────────────
+  // Regra: extrair somente o inteiro. Ex: "40 anos 4 meses" → "40"
+  const mIdade = txt.match(/Idade\s*[:\-]?\s*[\r\n\t]*(\d{1,3})\s*anos?/i);
+  const idadeAnos = mIdade ? parseInt(mIdade[1], 10) : null;
+  const idade = idadeAnos !== null ? String(idadeAnos) : "";
 
-  // ── Setor: CLÍNICA MÉDICA ou PEDIATRIA (≤11 anos) ───────────────────────
-  const setor = (idadeAnos !== null && idadeAnos <= 11) ? "PEDIATRIA" : "CLÍNICA MÉDICA";
-
-  // ── Categoria do card ────────────────────────────────────────────────────
+  // ── Categoria do card (para o kanban) ───────────────────────────────────
+  // Usado internamente; não interfere em SETOR (que segue regra própria abaixo)
   const categoria = (idadeAnos !== null && idadeAnos <= 11) ? "pediatria" : "normal";
 
-  // ── 1º Recurso → rec ────────────────────────────────────────────────────
-  const mRec = txt.match(/1[°º˚o]?\s*Recurso\s*[\t\n :]+([^\n]+)/i);
+  // ── SETOR/LOCALIZAÇÃO ────────────────────────────────────────────────────
+  // Regra: usar SOMENTE campo "SETOR/LEITO" ou "SETOR" explícito na ficha.
+  // NUNCA inferir por idade. NUNCA usar Unidade Solicitante. Se ausente → vazio.
+  const mSetorLeito = txt.match(/SETOR\s*[/\/]\s*LEITO\s*[:\-]?\s*[\r\n\t]*([^\r\n\t]+)/i);
+  const mSetor      = txt.match(/\bSETOR\s*[:\-]?\s*[\r\n\t]*([^\r\n\t]+)/i);
+  const setor = mSetorLeito
+    ? mSetorLeito[1].trim().toUpperCase()
+    : mSetor
+      ? mSetor[1].trim().toUpperCase()
+      : "";
+
+  // ── 1º Recurso → rec (campo do card) ────────────────────────────────────
+  const mRec = txt.match(/1[°º˚o]?\s*Recurso\s*[:\-]?\s*[\r\n\t]*([^\r\n]+)/i);
   const rec = mRec ? mRec[1].trim().toUpperCase() : "";
 
-  // ── Hospital destino ─────────────────────────────────────────────────────
-  const mHosp = txt.match(/Unidade\s+Receptora\s*[\t\n :]+([^\n\t]+)/i);
-  const hosp = mHosp ? mHosp[1].trim().toUpperCase() : "";
+  // ── Hospital destino: somente se houver aceite explícito ─────────────────
+  // Regra: verificar se "Aceitou Solicitação" aparece no Histórico.
+  // Se houve apenas recusa, não preencher.
+  const temAceite = /Aceitou\s+Solicita[çc][aã]o/i.test(txt);
+  const mHosp = txt.match(/Unidade\s+Receptora\s*[:\-]?\s*[\r\n\t]*([^\r\n\t]+)/i);
+  const hosp = (temAceite && mHosp) ? mHosp[1].trim().toUpperCase() : "";
 
   // ── CID / Diagnóstico ────────────────────────────────────────────────────
-  const mCid1 = txt.match(/CID\s*1\s*[\t\n :]+([^\n\t]+)/i);
+  // Regra: usar CID 1; se ausente/não informado, usar CID 2; se ambos ausentes → vazio.
+  // NUNCA usar Resumo Clínico como fallback.
+  const mCid1 = txt.match(/CID\s*1\s*[:\-]?\s*[\r\n\t]*([^\r\n\t]+)/i);
+  const mCid2 = txt.match(/CID\s*2\s*[:\-]?\s*[\r\n\t]*([^\r\n\t]+)/i);
   const cid1Raw = mCid1 ? mCid1[1].trim() : "";
-  const mCid2 = txt.match(/CID\s*2\s*[\t\n :]+([^\n\t]+)/i);
   const cid2Raw = mCid2 ? mCid2[1].trim() : "";
-  const cid1 = /n[ãa]o\s+informado/i.test(cid1Raw) ? "" : cid1Raw;
-  const cid2 = /n[ãa]o\s+informado/i.test(cid2Raw) ? "" : cid2Raw;
-  let hd = "";
-  if(cid1) hd = cid1.toUpperCase();
-  else if(cid2) hd = cid2.toUpperCase();
-  else {
-    const mResumo = txt.match(/Resumo\s+Cl[íi]nico\s*[\t\n :]+([^\n]+)/i);
-    if(mResumo) hd = mResumo[1].trim().toUpperCase();
+  const cid1 = /n[ãa]o\s*informado/i.test(cid1Raw) ? "" : cid1Raw;
+  const cid2 = /n[ãa]o\s*informado/i.test(cid2Raw) ? "" : cid2Raw;
+  const hd = cid1 ? cid1.toUpperCase() : cid2 ? cid2.toUpperCase() : "";
+
+  // ── Médico SOLICITANTE (não confundir com Médico Receptor) ───────────────
+  // Regra: buscar "Médico Solicitante" ou "Solicitante", nunca "Médico Receptor"
+  const mMed = txt.match(/(?:M[eé]dico\s*Solicitante|Solicitante)\s*[:\-]?\s*[\r\n\t]*([^\r\n\t]+)/i);
+  const medico_solic = mMed ? mMed[1].trim() : "";
+
+  // ── Status ───────────────────────────────────────────────────────────────
+  // Regra: Finalizou (A1/A8) → encerrada; Cancelou → cancelada; senão vazio
+  let status = "";
+  if(/Finalizou\s+a\s+ficha/i.test(txt)) {
+    status = "FICHA ENCERRADA PELO CROSS";
+  } else if(/Cancelou\s+Solicita[çc][aã]o|Cancelada\s+pelo\s+solicitante/i.test(txt)) {
+    status = "FICHA CANCELADA PELO SOLICITANTE";
   }
 
   // ── Gravidade ────────────────────────────────────────────────────────────
-  let grav = "urgencia"; // padrão AMARELO
-  if(/Emerg[eê]ncia|Prioridade\s*1/i.test(txt)) grav = "emergencia";
-  else if(/Menor\s+urg[eê]ncia|Prioridade\s*3/i.test(txt)) grav = "menor_gravidade";
-  else if(/Agendamento|Prioridade\s*4/i.test(txt)) grav = "agendamento";
+  // Regra: buscar o campo "Gravidade" ou "Prioridade" e mapear para chave interna.
+  // Fallback padrão: urgencia (AMARELO).
+  let grav = "urgencia";
+  const mGrav = txt.match(/(?:Gravidade|Prioridade)\s*[:\-]?\s*[\r\n\t]*([^\r\n\t]+)/i);
+  if(mGrav){
+    const g = mGrav[1].trim().toUpperCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"");
+    if(/PRIORIDADE\s*1|EMERGENCI/.test(g))      grav = "emergencia";
+    else if(/PRIORIDADE\s*2|URGENCI/.test(g))   grav = "urgencia";
+    else if(/PRIORIDADE\s*3|MENOR/.test(g))     grav = "menor_gravidade";
+    else if(/PRIORIDADE\s*4|AGENDAMENTO/.test(g)) grav = "agendamento";
+  } else {
+    // Fallback: varredura no texto para termos de prioridade explícitos
+    if(/Emerg[eê]ncia|Prioridade\s*1/i.test(txt))          grav = "emergencia";
+    else if(/Menor\s+urg[eê]ncia|Prioridade\s*3/i.test(txt)) grav = "menor_gravidade";
+    else if(/Agendamento|Prioridade\s*4/i.test(txt))         grav = "agendamento";
+  }
 
-  // ── Médico receptor ──────────────────────────────────────────────────────
-  const mMed = txt.match(/M[eé]dico\s+Receptor\s*[\t\n :]+([^\n\t]+)/i);
-  const medico_solic = mMed ? mMed[1].trim() : "";
+  // ── Observação ───────────────────────────────────────────────────────────
+  // Regra: campo "Observações" se existir; senão "Resumo Clínico".
+  // Quebras de linha internas viram espaço (célula TSV = linha única).
+  let obs = "";
+  const mObs = txt.match(/Observa[çc][õo]es?\s*[:\-]?\s*[\r\n\t]*([\s\S]*?)(?=\n\s*[A-ZÁÉÍÓÚÂÊÔÃÕÇ][^\n:]{2,40}:|$)/i);
+  if(mObs && mObs[1].trim()){
+    obs = mObs[1].trim().replace(/[\r\n\t]+/g," ");
+  } else {
+    const mRes = txt.match(/Resumo\s*Cl[íi]nico\s*[:\-]?\s*[\r\n\t]*([\s\S]*?)(?=\n\s*[A-ZÁÉÍÓÚÂÊÔÃÕÇ][^\n:]{2,40}:|$)/i);
+    if(mRes && mRes[1].trim()) obs = mRes[1].trim().replace(/[\r\n\t]+/g," ");
+  }
 
   // ── Monta objeto ─────────────────────────────────────────────────────────
   const raw = {};
@@ -110,13 +153,14 @@ function parseTSVToCard(txt){
   if(hosp)         raw.hosp         = hosp;
   if(grav)         raw.grav         = grav;
   if(medico_solic) raw.medico_solic = medico_solic;
+  if(status)       raw.status       = status;
+  if(obs)          raw.obs          = obs;
   if(categoria)    raw.categoria    = categoria;
 
   if(Object.keys(raw).length === 0) return null;
 
   // Aviso se não achou campos essenciais
-  const essenciais = [raw.nome, raw.ficha_cross, raw.hd];
-  if(essenciais.every(v=>!v)){
+  if(!raw.nome && !raw.ficha_cross && !raw.hd){
     raw._aviso = "⚠ Não foi possível identificar nome, ficha ou diagnóstico. Verifique se o texto colado é de uma ficha CROSS completa.";
   }
 
@@ -169,6 +213,7 @@ function CardModal({
         hora_adm:     c.hora_adm      || f.hora_adm,
         grav:         c.grav          || f.grav,
         obs:          c.obs           || f.obs,
+        status:       c.status        || f.status,
         ficha_cross:  c.ficha_cross   || f.ficha_cross,
         medico_solic: c.medico_solic  || f.medico_solic,
         hosp:         c.hosp          || f.hosp,
