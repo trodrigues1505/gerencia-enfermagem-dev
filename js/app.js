@@ -1159,7 +1159,7 @@ function App() {
       style: { background: "#0F172A", padding: "0 20px", position: "sticky", top: 0, zIndex: 100, boxShadow: "0 2px 12px rgba(0,0,0,.2)" }
     },
       /*#__PURE__*/React.createElement("div", {
-        style: { maxWidth: 1600, margin: "0 auto", display: "flex", alignItems: "center", justifyContent: "space-between", height: 52 }
+        style: { maxWidth: 1600, margin: "0 auto", display: "flex", alignItems: "center", justifyContent: "space-between", minHeight: 52, flexWrap: "wrap", gap: 6, padding: "6px 0" }
       },
         /*#__PURE__*/React.createElement("div", { style: { display: "flex", alignItems: "center", gap: 10 } },
           /*#__PURE__*/React.createElement("div", { style: { width: 30, height: 30, borderRadius: 8, background: "#1E40AF", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 } },
