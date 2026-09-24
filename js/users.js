@@ -386,5 +386,5 @@ function UsersPanel({
       )
     )
   )
-);
+));
 }
