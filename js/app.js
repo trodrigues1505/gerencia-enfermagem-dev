@@ -1231,8 +1231,8 @@ function App() {
     /* Conteúdo principal */
     /*#__PURE__*/React.createElement("div", { style: { maxWidth: 1600, margin: "0 auto", padding: "16px 20px" } },
       /* Barra de navegação e filtros */
-      /*#__PURE__*/React.createElement("div", { className: "ge-nav-bar", style: { display: "flex", gap: 8, marginBottom: 14, alignItems: "center", flexWrap: "nowrap", paddingBottom: 4 } },
-        /*#__PURE__*/React.createElement("div", { className: "ge-nav-inner", style: { background: "#fff", border: "1px solid #E2E8F0", borderRadius: 8, padding: "2px", display: "flex", gap: 1, flexShrink: 0, overflowX: "auto", WebkitOverflowScrolling: "touch" } },
+      /*#__PURE__*/React.createElement("div", { className: "ge-nav-bar", style: { display: "flex", gap: 8, marginBottom: 14, alignItems: "center", flexWrap: "nowrap", paddingBottom: 4, overflowX: "auto", WebkitOverflowScrolling: "touch" } },
+        /*#__PURE__*/React.createElement("div", { className: "ge-nav-inner", style: { background: "#fff", border: "1px solid #E2E8F0", borderRadius: 8, padding: "2px", display: "flex", gap: 1, flexShrink: 0, minWidth: "max-content" } },
           /*#__PURE__*/React.createElement(NavBtn, { id: "dashboard", label: "📊 Dashboard" }),
           /*#__PURE__*/React.createElement(KanbanDropdown, { view: view, setView: setView }),
           /*#__PURE__*/React.createElement("a", { href: "remocao.html", style: { padding: "5px 14px", borderRadius: 6, border: "none", fontSize: 12, fontWeight: 400, background: "transparent", color: "#64748B", cursor: "pointer", textDecoration: "none", display: "inline-flex", alignItems: "center" , flexShrink: 0, whiteSpace: "nowrap" } }, "🚑 Remoção"),
